@@ -3,6 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AvaSend.ViewModels"
+             xmlns:views="clr-namespace:AvaSend.Views"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
              x:Class="AvaSend.Views.MainView"
              x:DataType="vm:MainViewModel">
@@ -52,6 +53,18 @@
       </Button>
     </StackPanel>
 
-    <ContentControl Grid.Column="1" Content="{Binding CurrentView}" />
+    <ContentControl Grid.Column="1" Content="{Binding CurrentViewModel}">
+      <ContentControl.DataTemplates>
+        <DataTemplate DataType="{x:Type vm:SendViewModel}">
+          <views:SendView DataContext="{Binding}" />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ReceiveViewModel}">
+          <views:ReceiveView DataContext="{Binding}" />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
+          <views:SettingsView DataContext="{Binding}" />
+        </DataTemplate>
+      </ContentControl.DataTemplates>
+    </ContentControl>
   </Grid>
 </UserControl>

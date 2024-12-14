@@ -8,12 +8,12 @@ namespace AvaSend.ViewModels;
 
 public class MainViewModel : ReactiveObject
 {
-    private ReactiveObject _currentView;
+    private ReactiveObject _currentViewModel;
 
-    public ReactiveObject CurrentView
+    public ReactiveObject CurrentViewModel
     {
-        get => _currentView;
-        set => this.RaiseAndSetIfChanged(ref _currentView, value);
+        get => _currentViewModel;
+        set => this.RaiseAndSetIfChanged(ref _currentViewModel, value);
     }
 
     public ReactiveCommand<Unit, Unit> ShowSendViewCommand { get; }
@@ -27,21 +27,21 @@ public class MainViewModel : ReactiveObject
         ShowSettingsViewCommand = ReactiveCommand.Create(ShowSettingsView);
 
         // 默认显示发送视图
-        ShowSendView();
+        CurrentViewModel = new ReceiveViewModel();
     }
 
     private void ShowSendView()
     {
-        CurrentView = new SendViewModel();
+        CurrentViewModel = new SendViewModel();
     }
 
     private void ShowReceiveView()
     {
-        CurrentView = new ReceiveViewModel();
+        CurrentViewModel = new ReceiveViewModel();
     }
 
     private void ShowSettingsView()
     {
-        CurrentView = new SettingsViewModel();
+        CurrentViewModel = new SettingsViewModel();
     }
 }

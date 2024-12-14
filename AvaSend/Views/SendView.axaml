@@ -2,7 +2,59 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AvaSend.ViewModels"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-             x:Class="AvaSend.SendView">
-  <TextBlock Text="Send" HorizontalAlignment="Center" VerticalAlignment="Center" />
+             x:Class="AvaSend.Views.SendView"
+             x:DataType="vm:SendViewModel">
+  <UserControl.DataContext>
+    <vm:SendViewModel />
+  </UserControl.DataContext>
+
+  <StackPanel Margin="20">
+    <!-- 发送类型 -->
+    <TextBlock Text="发送类型" FontSize="20" Margin="0,0,0,10" />
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,20">
+      <Button Content="文本" Width="100" Margin="10" />
+      <Button Content="文件" Width="100" Margin="10" />
+    </StackPanel>
+
+    <!-- 设备列表 -->
+    <Grid Margin="0,0,0,10">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="*" />
+      </Grid.ColumnDefinitions>
+      <TextBlock Text="设备列表" FontSize="20" Margin="0,0,10,0" VerticalAlignment="Center" Grid.Column="0" />
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Grid.Column="1">
+        <Button Width="30" Height="30" Margin="5" Background="Transparent" BorderBrush="Transparent" CornerRadius="15">
+          <PathIcon Data="{StaticResource arrow_sync_regular}" Width="20" Height="20" />
+          <ToolTip.Tip>
+            <TextBlock Text="刷新" />
+          </ToolTip.Tip>
+        </Button>
+        <Button Width="30" Height="30" Margin="5" Background="Transparent" BorderBrush="Transparent" CornerRadius="15">
+          <PathIcon Data="{StaticResource communication_regular}" Width="20" Height="20" />
+          <ToolTip.Tip>
+            <TextBlock Text="输入地址" />
+          </ToolTip.Tip>
+        </Button>
+        <Button Width="30" Height="30" Margin="5" Background="Transparent" BorderBrush="Transparent" CornerRadius="15">
+          <PathIcon Data="{StaticResource favorites_regular}" Width="20" Height="20" />
+          <ToolTip.Tip>
+            <TextBlock Text="收藏夹" />
+          </ToolTip.Tip>
+        </Button>
+      </StackPanel>
+    </Grid>
+
+    <ListBox ItemsSource="{Binding DeviceList}">
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="x:String">
+          <StackPanel Orientation="Horizontal">
+            <TextBlock Text="{Binding}" Margin="10" />
+          </StackPanel>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+  </StackPanel>
 </UserControl>

@@ -61,18 +61,13 @@ public class TCPServer
     /// <summary>
     /// 配置服务器的IP和端口
     /// </summary>
-    private void ConfigureServer()
+    private void ConfigureServer(string inputIp = "127.0.0.1", string inputPort = "8080")
     {
         // 设置默认IP和端口
-        Console.WriteLine("请输入IP地址（默认127.0.0.1）：");
-        string inputIp = Console.ReadLine();
         if (!string.IsNullOrEmpty(inputIp))
         {
             Ip = inputIp;
         }
-
-        Console.WriteLine("请输入端口（默认8080）：");
-        string inputPort = Console.ReadLine();
         if (int.TryParse(inputPort, out int parsedPort))
         {
             Port = parsedPort;

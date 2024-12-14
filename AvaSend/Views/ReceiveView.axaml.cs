@@ -2,7 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 
-namespace AvaSend;
+namespace AvaSend.Views;
 
 public partial class ReceiveView : UserControl
 {
