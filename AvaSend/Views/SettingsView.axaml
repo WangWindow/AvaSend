@@ -2,7 +2,21 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AvaSend.ViewModels"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-             x:Class="AvaSend.Views.SettingsView">
-  <TextBlock Text="Settings" HorizontalAlignment="Center" VerticalAlignment="Center" />
+             x:Class="AvaSend.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+  <UserControl.DataContext>
+    <vm:SettingsViewModel />
+  </UserControl.DataContext>
+
+  <StackPanel Margin="10">
+    <TextBlock Text="IP 地址：" Margin="0,0,0,5" />
+    <TextBox Text="{Binding Ip}" Width="200" Margin="0,0,0,10" />
+
+    <TextBlock Text="端口：" Margin="0,0,0,5" />
+    <TextBox Text="{Binding Port}" Width="200" Margin="0,0,0,10" />
+
+    <Button Content="保存设置" Command="{Binding SaveCommand}" Width="100" />
+  </StackPanel>
 </UserControl>
