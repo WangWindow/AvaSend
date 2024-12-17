@@ -19,8 +19,9 @@
       <ColumnDefinition Width="*" />
     </Grid.ColumnDefinitions>
 
-    <StackPanel Grid.Column="0" Background="#2E2E2E">
-      <TextBlock Text="AvaSend" FontFamily="Arial" FontSize="24" Foreground="White" HorizontalAlignment="Center" Margin="20" />
+    <!-- 侧边栏 -->
+    <StackPanel Grid.Column="0" Background="#2E2E2E" Spacing="10">
+      <TextBlock Text="AvaSend" FontFamily="Arial" FontSize="30" Foreground="White" HorizontalAlignment="Center" Margin="20" />
       <Button Command="{Binding ShowReceiveViewCommand}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="5,2" Background="#2E2E2E">
         <Grid Margin="5,0">
           <Grid.ColumnDefinitions>
@@ -53,18 +54,39 @@
       </Button>
     </StackPanel>
 
-    <ContentControl Grid.Column="1" Content="{Binding CurrentViewModel}">
-      <ContentControl.DataTemplates>
-        <DataTemplate DataType="{x:Type vm:SendViewModel}">
-          <views:SendView DataContext="{Binding}" />
-        </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:ReceiveViewModel}">
-          <views:ReceiveView DataContext="{Binding}" />
-        </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
-          <views:SettingsView DataContext="{Binding}" />
-        </DataTemplate>
-      </ContentControl.DataTemplates>
-    </ContentControl>
+    <Grid Grid.Column="1">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="50" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" />
+      </Grid.RowDefinitions>
+
+      <!-- 标题栏 -->
+      <Panel Grid.Row="0">
+        <!-- 其他标题栏控件可以放在这里 -->
+      </Panel>
+
+      <!-- 中间部分 -->
+      <Panel Grid.Row="1">
+        <!-- 其他中间控件可以放在这里 -->
+      </Panel>
+
+      <!-- 页面内容 -->
+      <Panel Grid.Row="2" VerticalAlignment="Stretch">
+        <ContentControl Content="{Binding CurrentViewModel}">
+          <ContentControl.DataTemplates>
+            <DataTemplate DataType="{x:Type vm:SendViewModel}">
+              <views:SendView DataContext="{Binding}" />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:ReceiveViewModel}">
+              <views:ReceiveView DataContext="{Binding}" />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
+              <views:SettingsView DataContext="{Binding}" />
+            </DataTemplate>
+          </ContentControl.DataTemplates>
+        </ContentControl>
+      </Panel>
+    </Grid>
   </Grid>
 </UserControl>

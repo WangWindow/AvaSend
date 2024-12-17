@@ -13,9 +13,46 @@
   <StackPanel Margin="20">
     <!-- 发送类型 -->
     <TextBlock Text="发送类型" FontSize="20" Margin="0,0,0,10" />
-    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,20">
-      <Button Content="文本" Width="100" Margin="10" />
-      <Button Content="文件" Width="100" Margin="10" />
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,20" Spacing="20">
+      <Button Width="100" Height="100" Margin="10" CornerRadius="10" Background="Transparent" Foreground="White">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
+          <PathIcon Data="{StaticResource document_regular}" Width="40" Height="40" />
+          <TextBlock Text="文件" HorizontalAlignment="Center" VerticalAlignment="Center" />
+        </StackPanel>
+        <ToolTip.Tip>
+          <TextBlock Text="文件" />
+        </ToolTip.Tip>
+      </Button>
+
+      <Button Width="100" Height="100" Margin="10" CornerRadius="10" Background="Transparent" Foreground="White">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
+          <PathIcon Data="{StaticResource folder_regular}" Width="40" Height="40" />
+          <TextBlock Text="文件夹" HorizontalAlignment="Center" VerticalAlignment="Center" />
+        </StackPanel>
+        <ToolTip.Tip>
+          <TextBlock Text="文件夹" />
+        </ToolTip.Tip>
+      </Button>
+
+      <Button Width="100" Height="100" Margin="10" CornerRadius="10" Background="Transparent" Foreground="White">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
+          <PathIcon Data="{StaticResource text_regular}" Width="40" Height="40" />
+          <TextBlock Text="文本" HorizontalAlignment="Center" VerticalAlignment="Center" />
+        </StackPanel>
+        <ToolTip.Tip>
+          <TextBlock Text="文本" />
+        </ToolTip.Tip>
+      </Button>
+
+      <Button Width="100" Height="100" Margin="10" CornerRadius="10" Background="Transparent" Foreground="White">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
+          <PathIcon Data="{StaticResource clipboard_regular}" Width="40" Height="40" />
+          <TextBlock Text="剪切板" HorizontalAlignment="Center" VerticalAlignment="Center" />
+        </StackPanel>
+        <ToolTip.Tip>
+          <TextBlock Text="剪切板" />
+        </ToolTip.Tip>
+      </Button>
     </StackPanel>
 
     <!-- 设备列表 -->
@@ -26,18 +63,23 @@
       </Grid.ColumnDefinitions>
       <TextBlock Text="设备列表" FontSize="20" Margin="0,0,10,0" VerticalAlignment="Center" Grid.Column="0" />
       <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Grid.Column="1">
+        <!-- 刷新 -->
         <Button Width="30" Height="30" Margin="5" Background="Transparent" BorderBrush="Transparent" CornerRadius="15">
           <PathIcon Data="{StaticResource arrow_sync_regular}" Width="20" Height="20" />
           <ToolTip.Tip>
             <TextBlock Text="刷新" />
           </ToolTip.Tip>
         </Button>
+
+        <!-- 地址 -->
         <Button Width="30" Height="30" Margin="5" Background="Transparent" BorderBrush="Transparent" CornerRadius="15">
           <PathIcon Data="{StaticResource communication_regular}" Width="20" Height="20" />
           <ToolTip.Tip>
             <TextBlock Text="输入地址" />
           </ToolTip.Tip>
         </Button>
+
+        <!-- 收藏 -->
         <Button Width="30" Height="30" Margin="5" Background="Transparent" BorderBrush="Transparent" CornerRadius="15">
           <PathIcon Data="{StaticResource favorites_regular}" Width="20" Height="20" />
           <ToolTip.Tip>
@@ -47,14 +89,20 @@
       </StackPanel>
     </Grid>
 
-    <ListBox ItemsSource="{Binding DeviceList}">
-      <ListBox.ItemTemplate>
-        <DataTemplate x:DataType="x:String">
-          <StackPanel Orientation="Horizontal">
-            <TextBlock Text="{Binding}" Margin="10" />
-          </StackPanel>
-        </DataTemplate>
-      </ListBox.ItemTemplate>
-    </ListBox>
+    <!-- 设备列表 -->
+    <StackPanel>
+      <ItemsControl ItemsSource="{Binding DeviceList}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <Button Background="Transparent" BorderBrush="Gray" BorderThickness="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="5">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <PathIcon Data="{StaticResource desktop_regular}" Width="30" Height="30" />
+                <TextBlock Text="{Binding}" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </StackPanel>
   </StackPanel>
 </UserControl>

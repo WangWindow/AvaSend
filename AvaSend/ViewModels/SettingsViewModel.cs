@@ -8,50 +8,65 @@ namespace AvaSend.ViewModels;
 
 public class SettingsViewModel : ReactiveObject
 {
-    private string ip = string.Empty; // 初始化 ip 字段
+    private string _ip;
+    private int _port;
+    private string _protocol;
+
+    private TCPClient _client;
+    private TCPServer _server;
+
+    public ICommand SaveCommand { get; }
+
+    public event PropertyChangedEventHandler? PropertyChanged; // 将事件声明为可为 null
 
     public string Ip
     {
-        get => ip;
+        get => _ip;
         set
         {
-            if (ip != value)
+            if (_ip != value)
             {
-                ip = value;
+                _ip = value;
                 OnPropertyChanged(nameof(Ip));
             }
         }
     }
 
-    private int port;
-
     public int Port
     {
-        get => port;
+        get => _port;
         set
         {
-            if (port != value)
+            if (_port != value)
             {
-                port = value;
+                _port = value;
                 OnPropertyChanged(nameof(Port));
             }
         }
     }
 
-    public ICommand SaveCommand { get; }
-
-    private TCPClient client;
-    private TCPServer server;
+    public string Protocol
+    {
+        get => _protocol;
+        set
+        {
+            if (_protocol != value)
+            {
+                _protocol = value;
+                OnPropertyChanged(nameof(Protocol));
+            }
+        }
+    }
 
     public SettingsViewModel()
     {
         // 初始化 TCPClient 和 TCPServer 实例
-        client = new TCPClient();
-        server = new TCPServer();
+        _client = new TCPClient();
+        _server = new TCPServer();
 
         // 设置初始值
-        Ip = client.Ip;
-        Port = client.Port;
+        Ip = _client.Ip;
+        Port = _client.Port;
 
         // 初始化命令
         SaveCommand = new DelegateCommand(SaveSettings);
@@ -59,17 +74,15 @@ public class SettingsViewModel : ReactiveObject
 
     private void SaveSettings()
     {
-        client.Ip = Ip;
-        client.Port = Port;
-        server.Ip = Ip;
-        server.Port = Port;
+        _client.Ip = Ip;
+        _client.Port = Port;
+        _server.Ip = Ip;
+        _server.Port = Port;
 
         // 重新连接客户端和服务器
-        client.Reconnect(client.Ip, client.Port);
-        server.RestartServer(server.Ip, server.Port);
+        _client.Reconnect(_client.Ip, _client.Port);
+        _server.RestartServer(_server.Ip, _server.Port);
     }
-
-    public event PropertyChangedEventHandler? PropertyChanged; // 将事件声明为可为 null
 
     protected void OnPropertyChanged(string name)
     {
@@ -77,6 +90,9 @@ public class SettingsViewModel : ReactiveObject
     }
 }
 
+/// <summary>
+/// 委托命令
+/// </summary>
 public class DelegateCommand : ICommand
 {
     private readonly Action execute;

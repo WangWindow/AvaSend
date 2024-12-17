@@ -23,6 +23,7 @@
       </ExperimentalAcrylicBorder.Material>
     </ExperimentalAcrylicBorder>
 
+    <!-- 内容区域 -->
     <views:MainView />
   </Panel>
 </Window>

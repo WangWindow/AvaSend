@@ -11,12 +11,33 @@
   </UserControl.DataContext>
 
   <StackPanel Margin="10">
-    <TextBlock Text="IP 地址：" Margin="0,0,0,5" />
-    <TextBox Text="{Binding Ip}" Width="200" Margin="0,0,0,10" />
+    <Grid>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" />
+        <RowDefinition Height="Auto" />
+      </Grid.RowDefinitions>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="*" />
+      </Grid.ColumnDefinitions>
 
-    <TextBlock Text="端口：" Margin="0,0,0,5" />
-    <TextBox Text="{Binding Port}" Width="200" Margin="0,0,0,10" />
+      <TextBlock Text="IP 地址：" FontSize="16" Grid.Row="0" Grid.Column="0" Margin="0,0,0,5" VerticalAlignment="Center" />
+      <TextBox Text="{Binding Ip}" Grid.Row="0" Grid.Column="1" Width="200" Margin="0,0,0,10" HorizontalAlignment="Center" />
 
-    <Button Content="保存设置" Command="{Binding SaveCommand}" Width="100" />
+      <TextBlock Text="端口：" FontSize="16" Grid.Row="1" Grid.Column="0" Margin="0,0,0,5" VerticalAlignment="Center" />
+      <TextBox Text="{Binding Port}" Grid.Row="1" Grid.Column="1" Width="200" Margin="0,0,0,10" HorizontalAlignment="Center" />
+
+      <TextBlock Text="传输协议：" FontSize="16" Grid.Row="2" Grid.Column="0" Margin="0,0,0,5" VerticalAlignment="Center" />
+      <ComboBox SelectedItem="{Binding Protocol}" Grid.Row="2" Grid.Column="1" Width="200" Margin="0,0,0,10" HorizontalAlignment="Center">
+        <ComboBoxItem Content="TCP" />
+        <ComboBoxItem Content="UDP" />
+      </ComboBox>
+
+      <Button Content="保存设置" Command="{Binding SaveCommand}" Grid.Row="5" Grid.Column="0" Width="100" HorizontalAlignment="Left" Margin="0,10,0,0" />
+    </Grid>
   </StackPanel>
 </UserControl>

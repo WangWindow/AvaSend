@@ -19,6 +19,7 @@ public class SendViewModel : ReactiveObject
         DeviceList = new ObservableCollection<string>
         {
             "设备1: 192.168.1.1:8080 (用户名: User1)",
+            "设备2: 127.0.0.1:8080 (用户名: User2)",
         };
     }
 }
