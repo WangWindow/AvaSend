@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net;
-using System.Net.Sockets;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Text.Json;
 
 namespace AvaSend.Models;
 
@@ -15,39 +11,20 @@ namespace AvaSend.Models;
 /// </summary>
 public class AvaSendApp
 {
-    /// <summary>
-    /// 应用程序名称
-    /// </summary>
+    private const string ConfigFileName = "AppSettings.json";
+
     public string AppName { get; set; }
 
-    /// <summary>
-    /// 应用程序版本
-    /// </summary>
     public string Version { get; set; }
 
-    /// <summary>
-    /// 应用程序配置
-    /// </summary>
     public Dictionary<string, string> Configurations { get; set; }
 
-    /// <summary>
-    /// 当前用户
-    /// </summary>
     public string CurrentUser { get; set; }
 
-    /// <summary>
-    /// 日志文件路径
-    /// </summary>
     public string LogFilePath { get; set; }
 
-    /// <summary>
-    /// 网络连接状态
-    /// </summary>
     public bool IsConnected { get; set; }
 
-    /// <summary>
-    /// 构造函数
-    /// </summary>
     public AvaSendApp()
     {
         Configurations = new Dictionary<string, string>();
@@ -77,6 +54,37 @@ public class AvaSendApp
     /// <returns>配置项值</returns>
     public string GetConfiguration(string key)
     {
-        return Configurations.ContainsKey(key) ? Configurations[key] : null;
+        return Configurations.TryGetValue(key, out string? value) ? value : null;
+    }
+
+    /// <summary>
+    /// 从JSON文件加载配置
+    /// </summary>
+    public void LoadConfigurations()
+    {
+        string filePath = Path.Combine(AppContext.BaseDirectory, ConfigFileName);
+        if (File.Exists(filePath))
+        {
+            string json = File.ReadAllText(filePath);
+            var config = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(json);
+            if (config != null && config.TryGetValue("AppSettings", out Dictionary<string, string>? value))
+            {
+                Configurations = value;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 保存配置到JSON文件
+    /// </summary>
+    public void SaveConfigurations()
+    {
+        var config = new Dictionary<string, Dictionary<string, string>>
+        {
+            { "AppSettings", Configurations }
+        };
+        string json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
+        string filePath = Path.Combine(AppContext.BaseDirectory, ConfigFileName);
+        File.WriteAllText(filePath, json);
     }
 }
