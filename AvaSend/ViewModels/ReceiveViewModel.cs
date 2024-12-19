@@ -1,21 +1,32 @@
 ﻿using ReactiveUI;
+using AvaSend.Models;
 
 namespace AvaSend.ViewModels;
 
 public class ReceiveViewModel : ViewModelBase
 {
-    private bool _isAnimationEnabled;
-    private bool _isAutoSaved;
+    private readonly DataService _dataService;
+
+    public ReceiveViewModel()
+    {
+        _dataService = DataService.Instance;
+    }
+
+    public string Username
+    {
+        get => _dataService.Username;
+        set => _dataService.Username = value;
+    }
 
     public bool IsAnimationEnabled
     {
-        get => _isAnimationEnabled;
-        set => this.RaiseAndSetIfChanged(ref _isAnimationEnabled, value);
+        get => _dataService.IsAnimationEnabled;
+        set => _dataService.IsAnimationEnabled = value;
     }
 
     public bool IsAutoSaved
     {
-        get => _isAutoSaved;
-        set => this.RaiseAndSetIfChanged(ref _isAutoSaved, value);
+        get => _dataService.IsAutoSaved;
+        set => _dataService.IsAutoSaved = value;
     }
 }

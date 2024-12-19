@@ -36,7 +36,7 @@ public partial class ReceiveView : UserControl
         };
         _timer.Tick += (sender, e) =>
         {
-            _rotateTransform.Angle += 1;
+            _rotateTransform.Angle += 2;
             if (_rotateTransform.Angle >= 360)
             {
                 _rotateTransform.Angle = 0;
@@ -45,7 +45,7 @@ public partial class ReceiveView : UserControl
             // Ëõ·Å¶¯»­Âß¼­
             _scaleTransform.ScaleX += 0.01 * _scaleDirection;
             _scaleTransform.ScaleY += 0.01 * _scaleDirection;
-            if (_scaleTransform.ScaleX >= 1.2 || _scaleTransform.ScaleX <= 0.8)
+            if (_scaleTransform.ScaleX >= 1.1 || _scaleTransform.ScaleX <= 0.9)
             {
                 _scaleDirection *= -1;
             }
