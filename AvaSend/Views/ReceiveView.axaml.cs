@@ -1,10 +1,10 @@
+using System;
+using System.Reactive.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Threading;
-using System;
-using System.Reactive.Linq;
 using AvaSend.ViewModels;
 using ReactiveUI;
 
@@ -32,7 +32,7 @@ public partial class ReceiveView : UserControl
 
         _timer = new DispatcherTimer
         {
-            Interval = TimeSpan.FromMilliseconds(100) // 调整间隔以减慢旋转速度
+            Interval = TimeSpan.FromMilliseconds(100), // 调整间隔以减慢旋转速度
         };
         _timer.Tick += (sender, e) =>
         {
@@ -58,18 +58,19 @@ public partial class ReceiveView : UserControl
     {
         if (DataContext is ReceiveViewModel viewModel)
         {
-            viewModel.WhenAnyValue(vm => vm.IsAnimationEnabled)
-                     .Subscribe(isEnabled =>
-                     {
-                         if (isEnabled)
-                         {
-                             StartAnimation();
-                         }
-                         else
-                         {
-                             StopAnimation();
-                         }
-                     });
+            viewModel
+                .WhenAnyValue(vm => vm.IsAnimationEnabled)
+                .Subscribe(isEnabled =>
+                {
+                    if (isEnabled)
+                    {
+                        StartAnimation();
+                    }
+                    else
+                    {
+                        StopAnimation();
+                    }
+                });
         }
     }
 

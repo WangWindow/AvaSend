@@ -7,10 +7,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvaSend", "AvaSend\AvaSend.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvaSend.Desktop", "AvaSend.Desktop\AvaSend.Desktop.csproj", "{7A42D5B4-EBAE-44AA-8A48-B565EE27C566}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleSend", "ConsoleSend\ConsoleSend.csproj", "{1D1F8971-1E36-4801-91E3-FE71DD986B29}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp", "ConsoleApp\ConsoleApp.csproj", "{431A7AA4-6F22-44BC-8436-96B564F097B7}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,14 +21,6 @@ Global
 		{7A42D5B4-EBAE-44AA-8A48-B565EE27C566}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7A42D5B4-EBAE-44AA-8A48-B565EE27C566}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7A42D5B4-EBAE-44AA-8A48-B565EE27C566}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1D1F8971-1E36-4801-91E3-FE71DD986B29}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1D1F8971-1E36-4801-91E3-FE71DD986B29}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1D1F8971-1E36-4801-91E3-FE71DD986B29}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1D1F8971-1E36-4801-91E3-FE71DD986B29}.Release|Any CPU.Build.0 = Release|Any CPU
-		{431A7AA4-6F22-44BC-8436-96B564F097B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{431A7AA4-6F22-44BC-8436-96B564F097B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{431A7AA4-6F22-44BC-8436-96B564F097B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{431A7AA4-6F22-44BC-8436-96B564F097B7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

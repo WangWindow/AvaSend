@@ -1,8 +1,8 @@
-﻿using ReactiveUI;
-using System;
+﻿using System;
 using System.Reactive;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
+using ReactiveUI;
 
 namespace AvaSend.ViewModels;
 
