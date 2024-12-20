@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
+using AvaSend.ViewModels;
 
 namespace AvaSend.Views;
 

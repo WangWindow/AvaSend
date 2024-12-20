@@ -22,31 +22,51 @@ public class SettingsViewModel : ViewModelBase
     public string Ip
     {
         get => _dataService.Ip;
-        set => _dataService.Ip = value;
+        set
+        {
+            _dataService.Ip = value;
+            this.RaisePropertyChanged(nameof(Ip));
+        }
     }
 
     public string Port
     {
         get => _dataService.Port;
-        set => _dataService.Port = value;
+        set
+        {
+            _dataService.Port = value;
+            this.RaisePropertyChanged(nameof(Port));
+        }
     }
 
     public string Protocol
     {
         get => _dataService.Protocol;
-        set => _dataService.Protocol = value;
+        set
+        {
+            _dataService.Protocol = value;
+            this.RaisePropertyChanged(nameof(Protocol));
+        }
     }
 
     public string SaveFolderPath
     {
         get => _dataService.SaveFolderPath;
-        set => _dataService.SaveFolderPath = value;
+        set
+        {
+            _dataService.SaveFolderPath = value;
+            this.RaisePropertyChanged(nameof(SaveFolderPath));
+        }
     }
 
     public string UserName
     {
         get => _dataService.UserName;
-        set => _dataService.UserName = value;
+        set
+        {
+            _dataService.UserName = value;
+            this.RaisePropertyChanged(nameof(UserName));
+        }
     }
 
     public ICommand SaveCommand { get; }
@@ -70,7 +90,17 @@ public class SettingsViewModel : ViewModelBase
 
     private void SaveSettings()
     {
-        _dataService.SaveSettings();
+        bool success = _dataService.SaveSettings();
+        if (success)
+        {
+            // 可以添加保存成功的提示，例如显示通知
+            Console.WriteLine("设置已保存成功。");
+        }
+        else
+        {
+            // 处理保存失败的情况，例如显示错误消息
+            Console.WriteLine("保存设置时发生错误。");
+        }
     }
 
     private async Task UpdateIpAsync()

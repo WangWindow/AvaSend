@@ -87,8 +87,8 @@
                 Width="200"
                 Margin="0,0,0,10"
                 HorizontalAlignment="Center">
-        <ComboBoxItem Content="TCP" />
-        <ComboBoxItem Content="UDP" />
+        <x:String>TCP</x:String>
+        <x:String>UDP</x:String>
       </ComboBox>
 
       <!-- 保存文件夹地址 -->
@@ -108,7 +108,7 @@
       <!-- 保存设置按钮 -->
       <Button Content="保存设置"
               Command="{Binding SaveCommand}"
-              Grid.Row="6"
+              Grid.Row="9"
               Grid.Column="0"
               Width="100"
               HorizontalAlignment="Left"

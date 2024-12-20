@@ -30,6 +30,7 @@ namespace AvaSend.ViewModels
             set
             {
                 _dataService.IsAnimationEnabled = value;
+                this.RaisePropertyChanged(nameof(IsAnimationEnabled));
                 SaveSettings();
             }
         }
@@ -40,6 +41,7 @@ namespace AvaSend.ViewModels
             set
             {
                 _dataService.IsAutoSaved = value;
+                this.RaisePropertyChanged(nameof(IsAutoSaved));
                 SaveSettings();
             }
         }

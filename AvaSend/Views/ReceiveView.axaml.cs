@@ -51,6 +51,13 @@ public partial class ReceiveView : UserControl
             }
         };
 
+        // 如果 DataContext 已经设置，直接调用 OnDataContextChanged 方法
+        if (DataContext != null)
+        {
+            OnDataContextChanged(this, EventArgs.Empty);
+        }
+
+        // 订阅 DataContextChanged 事件
         this.DataContextChanged += OnDataContextChanged;
     }
 
@@ -71,6 +78,16 @@ public partial class ReceiveView : UserControl
                         StopAnimation();
                     }
                 });
+
+            // 检查初始状态
+            if (viewModel.IsAnimationEnabled)
+            {
+                StartAnimation();
+            }
+            else
+            {
+                StopAnimation();
+            }
         }
     }
 
