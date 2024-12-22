@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using ReactiveUI;
@@ -10,6 +11,14 @@ namespace AvaSend.Models
     /// </summary>
     public class DataService : ReactiveObject
     {
+        private DataService()
+        {
+            _avaSendApp = new AvaSendApp();
+            SaveFolderPath = ResolvePath("~/Downloads/AvaSend");
+            LoadSettings();
+            LoadDevices();
+        }
+
         // 单例模式
         public static DataService Instance => _instance.Value;
         private static readonly Lazy<DataService> _instance = new(() => new DataService());
@@ -24,7 +33,7 @@ namespace AvaSend.Models
             set => this.RaiseAndSetIfChanged(ref _username, value);
         }
 
-        // 新增属性：IsServerEnabled
+        // IsServerEnabled
         private bool _isServerEnabled = true; // 默认值为 true
         public bool IsServerEnabled
         {
@@ -32,7 +41,13 @@ namespace AvaSend.Models
             set => this.RaiseAndSetIfChanged(ref _isServerEnabled, value);
         }
 
-        // 其他属性...
+        private Dictionary<string, string> _deviceList;
+
+        public Dictionary<string, string> DeviceList
+        {
+            get => _deviceList;
+            set => this.RaiseAndSetIfChanged(ref _deviceList, value);
+        }
 
         private string _ip;
         public string Ip
@@ -74,13 +89,6 @@ namespace AvaSend.Models
         {
             get => _isAutoSaved;
             set => this.RaiseAndSetIfChanged(ref _isAutoSaved, value);
-        }
-
-        private DataService()
-        {
-            _avaSendApp = new AvaSendApp();
-            SaveFolderPath = ResolvePath("~/Downloads/AvaSend");
-            LoadSettings();
         }
 
         // 加载设置
@@ -152,6 +160,44 @@ namespace AvaSend.Models
             }
         }
 
+        // 加载设备列表
+        public void LoadDevices()
+        {
+            bool loadSuccess = _avaSendApp.LoadDevices();
+            if (!loadSuccess)
+            {
+                Console.WriteLine("配置设备列表失败，使用默认值。");
+            }
+        }
+
+        // 保存设备列表
+        public bool SaveDevices()
+        {
+            try
+            {
+                foreach (var device in _avaSendApp.DeviceList)
+                {
+                    if (string.IsNullOrWhiteSpace(device.Value))
+                    {
+                        _avaSendApp.DeviceList.Remove(device.Key);
+                    }
+                    _avaSendApp.AddOrUpdateDevice(device.Key, device.Value);
+                }
+                return _avaSendApp.SaveDevices();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"保存设备列表时发生错误: {ex.Message}");
+                return false;
+            }
+        }
+
+        // 添加或更新设备
+        public void AddOrUpdateDevice(string key, string value)
+        {
+            _avaSendApp.AddOrUpdateDevice(key, value);
+        }
+
         // 验证 Protocol 的值
         private string ValidateProtocol(string? protocol)
         {
@@ -166,8 +212,11 @@ namespace AvaSend.Models
         // 生成随机字符串
         private string GenerateRandomString(int length)
         {
-            // 实现生成随机字符串的逻辑
-            return "RandomUser";
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            var random = new Random();
+            return new string(
+                Enumerable.Repeat(chars, length).Select(s => s[random.Next(s.Length)]).ToArray()
+            );
         }
 
         // 解析路径

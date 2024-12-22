@@ -18,9 +18,9 @@
                FontSize="20"
                Margin="0,0,0,10" />
     <StackPanel Orientation="Horizontal"
-                HorizontalAlignment="Left"
+                HorizontalAlignment="Center"
                 Margin="0,0,0,20"
-                Spacing="20">
+                Spacing="30">
       <Button Width="100"
               Height="100"
               Margin="10"
@@ -84,7 +84,7 @@
         </ToolTip.Tip>
       </Button>
 
-      <Button Width="100"
+      <!-- <Button Width="100"
               Height="100"
               Margin="10"
               CornerRadius="10"
@@ -103,7 +103,7 @@
         <ToolTip.Tip>
           <TextBlock Text="剪切板" />
         </ToolTip.Tip>
-      </Button>
+      </Button> -->
     </StackPanel>
 
     <!-- 设备列表 -->
@@ -119,14 +119,16 @@
                  Grid.Column="0" />
       <StackPanel Orientation="Horizontal"
                   HorizontalAlignment="Left"
-                  Grid.Column="1">
+                  Grid.Column="1"
+                  Spacing="10">
         <!-- 刷新 -->
         <Button Width="30"
                 Height="30"
                 Margin="5"
                 Background="Transparent"
                 BorderBrush="Transparent"
-                CornerRadius="15">
+                CornerRadius="15"
+                Command="{Binding RefreshDeviceListCommand}">
           <PathIcon Data="{StaticResource arrow_sync_regular}"
                     Width="20"
                     Height="20" />
@@ -135,8 +137,34 @@
           </ToolTip.Tip>
         </Button>
 
-        <!-- 地址 -->
+        <TextBlock Text="添加设备"
+                   FontSize="20"
+                   Margin="0,0,10,0"
+                   VerticalAlignment="Center" />
+
+        <!-- 添加设备 -->
+        <TextBox Text="{Binding NewDevice}"
+                 Width="200"
+                 Height="30"
+                 Margin="5,0"
+                 VerticalAlignment="Center" />
         <Button Width="30"
+                Height="30"
+                Margin="5,0,0,0"
+                Background="Transparent"
+                BorderBrush="Transparent"
+                CornerRadius="15"
+                Command="{Binding AddDeviceCommand}">
+          <PathIcon Data="{StaticResource add_regular}"
+                    Width="20"
+                    Height="20" />
+          <ToolTip.Tip>
+            <TextBlock Text="添加设备" />
+          </ToolTip.Tip>
+        </Button>
+
+        <!-- 地址 -->
+        <!-- <Button Width="30"
                 Height="30"
                 Margin="5"
                 Background="Transparent"
@@ -148,10 +176,10 @@
           <ToolTip.Tip>
             <TextBlock Text="输入地址" />
           </ToolTip.Tip>
-        </Button>
+        </Button> -->
 
         <!-- 收藏 -->
-        <Button Width="30"
+        <!-- <Button Width="30"
                 Height="30"
                 Margin="5"
                 Background="Transparent"
@@ -163,7 +191,7 @@
           <ToolTip.Tip>
             <TextBlock Text="收藏夹" />
           </ToolTip.Tip>
-        </Button>
+        </Button> -->
       </StackPanel>
     </Grid>
 
