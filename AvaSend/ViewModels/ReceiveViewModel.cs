@@ -7,11 +7,14 @@ namespace AvaSend.ViewModels
     public class ReceiveViewModel : ViewModelBase
     {
         private readonly DataService _dataService;
+        private UDPServer _udpServer;
+        private TCPServer _tcpServer;
 
         public ReceiveViewModel()
         {
             _dataService = DataService.Instance;
             SaveCommand = ReactiveCommand.Create(SaveSettings);
+            ToggleServerCommand = ReactiveCommand.Create(ToggleServer);
         }
 
         public string UserName
@@ -46,11 +49,61 @@ namespace AvaSend.ViewModels
             }
         }
 
+        public bool IsServerEnabled
+        {
+            get => _dataService.IsServerEnabled;
+            set
+            {
+                _dataService.IsServerEnabled = value;
+                this.RaisePropertyChanged(nameof(IsServerEnabled));
+                SaveSettings();
+            }
+        }
+
         public ReactiveCommand<Unit, Unit> SaveCommand { get; }
+        public ReactiveCommand<Unit, Unit> ToggleServerCommand { get; }
 
         private void SaveSettings()
         {
             _dataService.SaveSettings();
+        }
+
+        private void ToggleServer()
+        {
+            var ServerIP = _dataService.Ip;
+            var ServerPort = _dataService.Port;
+            if (IsServerEnabled)
+            {
+                // 启动服务器
+                if (_dataService.Protocol == "TCP")
+                {
+                    _tcpServer = new TCPServer { Ip = ServerIP, Port = int.Parse(ServerPort) };
+                    _tcpServer.StartServerAsync();
+                }
+                else if (_dataService.Protocol == "UDP")
+                {
+                    _udpServer = new UDPServer { Ip = ServerIP, Port = int.Parse(ServerPort) };
+                    _udpServer.StartServerAsync();
+                }
+            }
+            else
+            {
+                // 停止服务器
+                if (_dataService.Protocol == "TCP")
+                {
+                    if (_tcpServer != null)
+                    {
+                        _tcpServer.StopServer();
+                    }
+                }
+                else if (_dataService.Protocol == "UDP")
+                {
+                    if (_udpServer != null)
+                    {
+                        _udpServer.StopServer();
+                    }
+                }
+            }
         }
     }
 }

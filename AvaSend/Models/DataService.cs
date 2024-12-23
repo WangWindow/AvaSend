@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using ReactiveUI;
@@ -97,7 +98,7 @@ namespace AvaSend.Models
             bool loadSuccess = _avaSendApp.LoadConfigurations();
             if (!loadSuccess)
             {
-                Console.WriteLine("配置加载失败，使用默认值。");
+                Debug.WriteLine("配置加载失败，使用默认值。");
             }
 
             // 加载 Protocol 并验证
@@ -155,7 +156,7 @@ namespace AvaSend.Models
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"保存设置时发生错误: {ex.Message}");
+                Debug.WriteLine($"保存设置时发生错误: {ex.Message}");
                 return false;
             }
         }
@@ -166,8 +167,9 @@ namespace AvaSend.Models
             bool loadSuccess = _avaSendApp.LoadDevices();
             if (!loadSuccess)
             {
-                Console.WriteLine("配置设备列表失败，使用默认值。");
+                Debug.WriteLine("配置设备列表失败，使用默认值。");
             }
+            DeviceList = _avaSendApp.DeviceList;
         }
 
         // 保存设备列表
@@ -175,9 +177,9 @@ namespace AvaSend.Models
         {
             try
             {
-                foreach (var device in _avaSendApp.DeviceList)
+                foreach (var device in DeviceList)
                 {
-                    if (string.IsNullOrWhiteSpace(device.Value))
+                    if (string.IsNullOrWhiteSpace(device.Key))
                     {
                         _avaSendApp.DeviceList.Remove(device.Key);
                     }
@@ -187,7 +189,7 @@ namespace AvaSend.Models
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"保存设备列表时发生错误: {ex.Message}");
+                Debug.WriteLine($"保存设备列表时发生错误: {ex.Message}");
                 return false;
             }
         }

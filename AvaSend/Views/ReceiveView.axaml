@@ -11,52 +11,66 @@
   <UserControl.DataContext>
     <vm:ReceiveViewModel />
   </UserControl.DataContext>
+  <ScrollViewer>
+    <Grid>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="*" />
+        <RowDefinition Height="*" />
+        <RowDefinition Height="*" />
+        <RowDefinition Height="Auto" />
+      </Grid.RowDefinitions>
 
-  <Grid>
-    <Grid.RowDefinitions>
-      <RowDefinition Height="*" />
-      <RowDefinition Height="*" />
-      <RowDefinition Height="Auto" />
-    </Grid.RowDefinitions>
+      <!-- 启动接收 -->
+      <StackPanel Orientation="Horizontal"
+                  HorizontalAlignment="Right"
+                  VerticalAlignment="Top"
+                  Margin="0 0 20 0"
+                  Grid.Row="0">
+        <ToggleSwitch IsChecked="{Binding IsServerEnabled}"
+                      Command="{Binding ToggleServerCommand}">
+          <ToolTip.Tip>
+            <TextBlock Text="启动/关闭" />
+          </ToolTip.Tip>
 
-    <!-- 图标 -->
-    <StackPanel HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Spacing="20"
-                Grid.Row="0">
-      <Image Source="/Assets/avalonia-logo.ico"
-             Width="160"
-             Height="160"
-             x:Name="IconImage" />
-    </StackPanel>
+        </ToggleSwitch>
+      </StackPanel>
 
-    <!-- 用户名 -->
-    <StackPanel HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Spacing="20"
-                Grid.Row="1">
-      <TextBlock Text="{Binding UserName}"
-                 FontSize="20"
-                 HorizontalAlignment="Center"
-                 Margin="0,20,0,0" />
-    </StackPanel>
+      <!-- 图标 -->
+      <StackPanel HorizontalAlignment="Center"
+                  Grid.Row="1">
+        <Image Source="/Assets/avalonia-logo.ico"
+               Width="160"
+               Height="160"
+               x:Name="IconImage" />
+      </StackPanel>
 
-    <!-- 滑动按钮 -->
-    <StackPanel Orientation="Horizontal"
-                HorizontalAlignment="Center"
-                Spacing="30"
-                Grid.Row="2"
-                Margin="0,20,0,20">
-      <TextBlock Text="启用动画"
-                 VerticalAlignment="Center" />
-      <ToggleSwitch IsChecked="{Binding IsAnimationEnabled}"
-                    Command="{Binding SaveCommand}" />
+      <!-- 用户名 -->
+      <StackPanel HorizontalAlignment="Center"
+                  VerticalAlignment="Center"
+                  Grid.Row="2">
+        <TextBlock Text="{Binding UserName}"
+                   FontSize="20"
+                   HorizontalAlignment="Center"
+                   Margin="0,20,0,0" />
+      </StackPanel>
 
-      <TextBlock Text="自动保存"
-                 VerticalAlignment="Center"
-                 Margin="20,0,0,0" />
-      <ToggleSwitch IsChecked="{Binding IsAutoSaved}"
-                    Command="{Binding SaveCommand}" />
-    </StackPanel>
-  </Grid>
+      <!-- 滑动按钮 -->
+      <StackPanel Orientation="Horizontal"
+                  HorizontalAlignment="Center"
+                  Spacing="30"
+                  Grid.Row="3"
+                  Margin="0,20,0,20">
+        <TextBlock Text="启用动画"
+                   VerticalAlignment="Center" />
+        <ToggleSwitch IsChecked="{Binding IsAnimationEnabled}"
+                      Command="{Binding SaveCommand}" />
+
+        <TextBlock Text="自动保存"
+                   VerticalAlignment="Center"
+                   Margin="20,0,0,0" />
+        <ToggleSwitch IsChecked="{Binding IsAutoSaved}"
+                      Command="{Binding SaveCommand}" />
+      </StackPanel>
+    </Grid>
+  </ScrollViewer>
 </UserControl>

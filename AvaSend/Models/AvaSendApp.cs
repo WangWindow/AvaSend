@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 
@@ -10,9 +11,9 @@ namespace AvaSend.Models;
 /// </summary>
 public class AvaSendApp
 {
-    private const string ConfigFileName = "AppSettings.json";
+    private const string ConfigFileName = "AvaSendSettings.json";
 
-    private const string DeviceListFileName = "DeviceList.json";
+    private const string DeviceListFileName = "AvaSendDeviceList.json";
 
     public string AppName { get; set; }
 
@@ -32,6 +33,12 @@ public class AvaSendApp
     {
         Configurations = new Dictionary<string, string>();
         DeviceList = new Dictionary<string, string>();
+
+        LoadConfigurations();
+        LoadDevices();
+        // 启动时将 IsServerEnabled 设置为 False
+        AddOrUpdateConfiguration("IsServerEnabled", "False");
+        SaveConfigurations();
     }
 
     // 添加或更新配置
@@ -97,7 +104,7 @@ public class AvaSendApp
         catch (Exception ex)
         {
             // 可以添加日志记录异常信息
-            Console.WriteLine($"加载配置时发生错误: {ex.Message}");
+            Debug.WriteLine($"加载配置时发生错误: {ex.Message}");
             return false;
         }
     }
@@ -127,7 +134,7 @@ public class AvaSendApp
         catch (Exception ex)
         {
             // 可以添加日志记录异常信息
-            Console.WriteLine($"加载配置时发生错误: {ex.Message}");
+            Debug.WriteLine($"加载配置时发生错误: {ex.Message}");
             return false;
         }
     }
@@ -152,7 +159,7 @@ public class AvaSendApp
         catch (Exception ex)
         {
             // 可以添加日志记录异常信息
-            Console.WriteLine($"保存配置时发生错误: {ex.Message}");
+            Debug.WriteLine($"保存配置时发生错误: {ex.Message}");
             return false;
         }
     }
@@ -177,7 +184,7 @@ public class AvaSendApp
         catch (Exception ex)
         {
             // 可以添加日志记录异常信息
-            Console.WriteLine($"保存配置时发生错误: {ex.Message}");
+            Debug.WriteLine($"保存配置时发生错误: {ex.Message}");
             return false;
         }
     }

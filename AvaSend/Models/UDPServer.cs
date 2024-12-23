@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -15,6 +16,7 @@ public class UDPServer
 {
     public string Ip { get; set; } = "127.0.0.1";
     public int Port { get; set; } = 8080;
+
     public string SaveFolderPath { get; set; } =
         Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
@@ -52,7 +54,7 @@ public class UDPServer
         try
         {
             _listener = new UdpClient(Port);
-            Console.WriteLine("服务器已启动，等待连接...");
+            Debug.WriteLine("服务器已启动，等待连接...");
 
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -62,7 +64,7 @@ public class UDPServer
         }
         catch (Exception e)
         {
-            Console.WriteLine($"服务器运行时发生错误：{e.Message}");
+            Debug.WriteLine($"服务器运行时发生错误：{e.Message}");
         }
     }
 
@@ -79,23 +81,27 @@ public class UDPServer
                 case 'T':
                     await HandleTextDataAsync(result);
                     break;
+
                 case 'F':
                     await HandleFileDataAsync(result, SaveFolderPath);
                     break;
+
                 case 'C':
                     await HandleClipboardDataAsync(result);
                     break;
+
                 case 'D':
                     await HandleFolderDataAsync(result, SaveFolderPath);
                     break;
+
                 default:
-                    Console.WriteLine("未知的数据类型");
+                    Debug.WriteLine("未知的数据类型");
                     break;
             }
         }
         catch (Exception e)
         {
-            Console.WriteLine($"处理客户端数据时发生错误：{e.Message}");
+            Debug.WriteLine($"处理客户端数据时发生错误：{e.Message}");
         }
     }
 
@@ -108,7 +114,7 @@ public class UDPServer
             int textLength = BitConverter.ToInt32(buffer, 1);
 
             string receivedText = Encoding.UTF8.GetString(buffer, 5, textLength);
-            Console.WriteLine("接收到的文本: " + receivedText);
+            Debug.WriteLine("接收到的文本: " + receivedText);
 
             // 发送确认消息
             string confirmation = "文本已接收";
@@ -121,7 +127,7 @@ public class UDPServer
         }
         catch (Exception e)
         {
-            Console.WriteLine($"处理文本数据时发生错误：{e.Message}");
+            Debug.WriteLine($"处理文本数据时发生错误：{e.Message}");
         }
     }
 
@@ -138,7 +144,7 @@ public class UDPServer
 
             if (!Directory.Exists(folderPath))
             {
-                Console.WriteLine("文件夹不存在，正在创建...");
+                Debug.WriteLine("文件夹不存在，正在创建...");
                 Directory.CreateDirectory(folderPath);
             }
 
@@ -147,7 +153,7 @@ public class UDPServer
             if (File.Exists(savePath))
             {
                 savePath = GetUniqueFilePath(savePath);
-                Console.WriteLine($"文件已存在，保存为新文件：{savePath}");
+                Debug.WriteLine($"文件已存在，保存为新文件：{savePath}");
             }
 
             using (FileStream fs = new FileStream(savePath, FileMode.Create, FileAccess.Write))
@@ -161,7 +167,7 @@ public class UDPServer
                     totalBytesReceived += fileBuffer.Length;
                 }
             }
-            Console.WriteLine("文件已保存到 " + savePath);
+            Debug.WriteLine("文件已保存到 " + savePath);
 
             // 发送确认消息
             string confirmation = "文件已接收";
@@ -174,7 +180,7 @@ public class UDPServer
         }
         catch (Exception e)
         {
-            Console.WriteLine($"处理文件数据时发生错误：{e.Message}");
+            Debug.WriteLine($"处理文件数据时发生错误：{e.Message}");
         }
     }
 
@@ -187,7 +193,7 @@ public class UDPServer
             int textLength = BitConverter.ToInt32(buffer, 1);
 
             string clipboardText = Encoding.UTF8.GetString(buffer, 5, textLength);
-            Console.WriteLine("接收到的剪贴板内容: " + clipboardText);
+            Debug.WriteLine("接收到的剪贴板内容: " + clipboardText);
 
             // 发送确认消息
             string confirmation = "剪贴板内容已接收";
@@ -200,7 +206,7 @@ public class UDPServer
         }
         catch (Exception e)
         {
-            Console.WriteLine($"处理剪贴板数据时发生错误：{e.Message}");
+            Debug.WriteLine($"处理剪贴板数据时发生错误：{e.Message}");
         }
     }
 
@@ -218,11 +224,11 @@ public class UDPServer
             if (!Directory.Exists(folderPathFull))
             {
                 Directory.CreateDirectory(folderPathFull);
-                Console.WriteLine($"文件夹已创建：{folderPathFull}");
+                Debug.WriteLine($"文件夹已创建：{folderPathFull}");
             }
             else
             {
-                Console.WriteLine($"文件夹已存在：{folderPathFull}");
+                Debug.WriteLine($"文件夹已存在：{folderPathFull}");
             }
 
             // 发送确认消息
@@ -236,7 +242,7 @@ public class UDPServer
         }
         catch (Exception e)
         {
-            Console.WriteLine($"处理文件夹数据时发生错误：{e.Message}");
+            Debug.WriteLine($"处理文件夹数据时发生错误：{e.Message}");
         }
     }
 

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -14,13 +15,16 @@ public class UDPClient
 {
     // 设置接口
     public string Ip { get; set; } = "127.0.0.1";
+
     public int Port { get; set; } = 8081;
+
     public string SaveFolderPath { get; set; } =
         Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             "Downloads",
             "AvaSend"
         );
+
     public int SearchTimeout { get; set; } = 3000; // 毫秒
 
     private UdpClient _client;
@@ -63,11 +67,11 @@ public class UDPClient
             byte[] msgLength = BitConverter.GetBytes(msg.Length);
             await SendPacketAsync(msgLength);
             await SendPacketAsync(msg);
-            Console.WriteLine("已发送文本");
+            Debug.WriteLine("已发送文本");
         }
         catch (Exception e)
         {
-            Console.WriteLine($"发送文本失败：{e.Message}");
+            Debug.WriteLine($"发送文本失败：{e.Message}");
         }
     }
 
@@ -78,7 +82,7 @@ public class UDPClient
         {
             if (!File.Exists(filePath))
             {
-                Console.WriteLine("文件不存在");
+                Debug.WriteLine("文件不存在");
                 return;
             }
 
@@ -103,11 +107,11 @@ public class UDPClient
                     await SendPacketAsync(buffer[..bytesRead]);
                 }
             }
-            Console.WriteLine("文件已发送");
+            Debug.WriteLine("文件已发送");
         }
         catch (Exception e)
         {
-            Console.WriteLine($"发送文件失败：{e.Message}");
+            Debug.WriteLine($"发送文件失败：{e.Message}");
         }
     }
 
@@ -123,11 +127,11 @@ public class UDPClient
             byte[] textLength = BitConverter.GetBytes(textBytes.Length);
             await SendPacketAsync(textLength);
             await SendPacketAsync(textBytes);
-            Console.WriteLine("剪贴板内容已发送");
+            Debug.WriteLine("剪贴板内容已发送");
         }
         catch (Exception e)
         {
-            Console.WriteLine($"发送剪贴板内容失败：{e.Message}");
+            Debug.WriteLine($"发送剪贴板内容失败：{e.Message}");
         }
     }
 
@@ -138,7 +142,7 @@ public class UDPClient
         {
             if (!Directory.Exists(folderPath))
             {
-                Console.WriteLine("文件夹不存在");
+                Debug.WriteLine("文件夹不存在");
                 return;
             }
 
@@ -159,11 +163,11 @@ public class UDPClient
             {
                 await SendFileDataAsync(file);
             }
-            Console.WriteLine("文件夹数据已发送");
+            Debug.WriteLine("文件夹数据已发送");
         }
         catch (Exception e)
         {
-            Console.WriteLine($"发送文件夹数据失败：{e.Message}");
+            Debug.WriteLine($"发送文件夹数据失败：{e.Message}");
         }
     }
 

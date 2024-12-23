@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
@@ -16,6 +17,23 @@ namespace AvaSend.ViewModels;
 
 public class SettingsViewModel : ViewModelBase
 {
+    public SettingsViewModel()
+    {
+        _dataService = DataService.Instance;
+        SaveCommand = ReactiveCommand.Create(SaveSettings);
+
+        // 初始化并启动 IP 更新定时器
+        _ipUpdateTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(5), // 每 5 秒检测一次
+        };
+        _ipUpdateTimer.Tick += async (sender, e) => await UpdateIpAsync();
+        _ipUpdateTimer.Start();
+
+        // 初始获取本机 IP
+        Task.Run(UpdateIpAsync);
+    }
+
     private readonly DataService _dataService;
     private readonly DispatcherTimer _ipUpdateTimer;
 
@@ -71,35 +89,18 @@ public class SettingsViewModel : ViewModelBase
 
     public ICommand SaveCommand { get; }
 
-    public SettingsViewModel()
-    {
-        _dataService = DataService.Instance;
-        SaveCommand = ReactiveCommand.Create(SaveSettings);
-
-        // 初始化并启动 IP 更新定时器
-        _ipUpdateTimer = new DispatcherTimer
-        {
-            Interval = TimeSpan.FromSeconds(5), // 每10秒检测一次
-        };
-        _ipUpdateTimer.Tick += async (sender, e) => await UpdateIpAsync();
-        _ipUpdateTimer.Start();
-
-        // 初始获取本机 IP
-        Task.Run(UpdateIpAsync);
-    }
-
     private void SaveSettings()
     {
         bool success = _dataService.SaveSettings();
         if (success)
         {
             // 可以添加保存成功的提示，例如显示通知
-            Console.WriteLine("设置已保存成功。");
+            Debug.WriteLine("设置已保存成功。");
         }
         else
         {
             // 处理保存失败的情况，例如显示错误消息
-            Console.WriteLine("保存设置时发生错误。");
+            Debug.WriteLine("保存设置时发生错误。");
         }
     }
 

@@ -12,212 +12,142 @@
     <vm:SendViewModel />
   </UserControl.DataContext>
 
-  <StackPanel Margin="20">
-    <!-- 发送类型 -->
-    <TextBlock Text="发送类型"
-               FontSize="20"
-               Margin="0,0,0,10" />
-    <StackPanel Orientation="Horizontal"
-                HorizontalAlignment="Center"
-                Margin="0,0,0,20"
-                Spacing="30">
-      <Button Width="100"
-              Height="100"
-              Margin="10"
-              CornerRadius="10"
-              Background="Transparent"
-              Foreground="White">
-        <StackPanel HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    Spacing="8">
-          <PathIcon Data="{StaticResource document_regular}"
-                    Width="40"
-                    Height="40" />
-          <TextBlock Text="文件"
-                     HorizontalAlignment="Center"
-                     VerticalAlignment="Center" />
+  <ScrollViewer>
+    <Grid>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" />
+      </Grid.RowDefinitions>
+
+      <StackPanel Grid.Row="0">
+        <!-- 发送类型 -->
+        <Panel VerticalAlignment="Center"
+               Margin="0,0,0,10">
+          <TextBlock Text="发送类型"
+                     FontSize="20"
+                     Margin="20,0,0,10" />
+          <StackPanel Orientation="Horizontal"
+                      HorizontalAlignment="Right">
+            <Button Content="发送"
+                    Command="{Binding SendCommand}"
+                    IsEnabled="{Binding CanSend}"
+                    Margin="0,0,40,0" />
+          </StackPanel>
+        </Panel>
+
+        <StackPanel Orientation="Horizontal"
+                    HorizontalAlignment="Center"
+                    Margin="0,0,0,10"
+                    Spacing="30">
+          <RadioButton GroupName="SendType"
+                       IsChecked="{Binding IsFileSelected, Mode=TwoWay}"
+                       Command="{Binding SelectFileCommand}"
+                       Width="100"
+                       Height="100"
+                       Margin="10"
+                       CornerRadius="10"
+                       Background="Transparent"
+                       Foreground="White">
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="8">
+              <PathIcon Data="{StaticResource document_regular}"
+                        Width="40"
+                        Height="40" />
+              <TextBlock Text="文件"
+                         HorizontalAlignment="Center" />
+            </StackPanel>
+          </RadioButton>
+
+          <RadioButton GroupName="SendType"
+                       IsChecked="{Binding IsFolderSelected, Mode=TwoWay}"
+                       Command="{Binding SelectFolderCommand}"
+                       Width="100"
+                       Height="100"
+                       Margin="10"
+                       CornerRadius="10"
+                       Background="Transparent"
+                       Foreground="White">
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="8">
+              <PathIcon Data="{StaticResource folder_regular}"
+                        Width="40"
+                        Height="40" />
+              <TextBlock Text="文件夹"
+                         HorizontalAlignment="Center" />
+            </StackPanel>
+          </RadioButton>
+
+          <RadioButton GroupName="SendType"
+                       IsChecked="{Binding IsTextSelected, Mode=TwoWay}"
+                       Command="{Binding SelectTextCommand}"
+                       Width="100"
+                       Height="100"
+                       Margin="10"
+                       CornerRadius="10"
+                       Background="Transparent"
+                       Foreground="White">
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="8">
+              <PathIcon Data="{StaticResource text_regular}"
+                        Width="40"
+                        Height="40" />
+              <TextBlock Text="文本"
+                         HorizontalAlignment="Center" />
+            </StackPanel>
+          </RadioButton>
         </StackPanel>
-        <ToolTip.Tip>
-          <TextBlock Text="文件" />
-        </ToolTip.Tip>
-      </Button>
 
-      <Button Width="100"
-              Height="100"
-              Margin="10"
-              CornerRadius="10"
-              Background="Transparent"
-              Foreground="White">
-        <StackPanel HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    Spacing="8">
-          <PathIcon Data="{StaticResource folder_regular}"
-                    Width="40"
-                    Height="40" />
-          <TextBlock Text="文件夹"
-                     HorizontalAlignment="Center"
-                     VerticalAlignment="Center" />
+        <!-- 数据输入或显示 -->
+        <StackPanel Margin="60,10,60,10"
+                    Grid.Row="2">
+          <TextBox Text="{Binding InputData}"
+                   IsReadOnly="{Binding IsInputReadOnly}"
+                   AcceptsReturn="True"
+                   Height="100" />
         </StackPanel>
-        <ToolTip.Tip>
-          <TextBlock Text="文件夹" />
-        </ToolTip.Tip>
-      </Button>
 
-      <Button Width="100"
-              Height="100"
-              Margin="10"
-              CornerRadius="10"
-              Background="Transparent"
-              Foreground="White">
-        <StackPanel HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    Spacing="8">
-          <PathIcon Data="{StaticResource text_regular}"
-                    Width="40"
-                    Height="40" />
-          <TextBlock Text="文本"
-                     HorizontalAlignment="Center"
+        <!-- 连接 -->
+        <StackPanel Margin="0,0,0,10"
+                    Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Center"
+                    Grid.Column="1"
+                    Spacing="10">
+
+          <TextBlock Text="目标设备"
+                     FontSize="20"
+                     Margin="0,0,0,0"
                      VerticalAlignment="Center" />
-        </StackPanel>
-        <ToolTip.Tip>
-          <TextBlock Text="文本" />
-        </ToolTip.Tip>
-      </Button>
 
-      <!-- <Button Width="100"
-              Height="100"
-              Margin="10"
-              CornerRadius="10"
-              Background="Transparent"
-              Foreground="White">
-        <StackPanel HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    Spacing="8">
-          <PathIcon Data="{StaticResource clipboard_regular}"
-                    Width="40"
-                    Height="40" />
-          <TextBlock Text="剪切板"
-                     HorizontalAlignment="Center"
-                     VerticalAlignment="Center" />
-        </StackPanel>
-        <ToolTip.Tip>
-          <TextBlock Text="剪切板" />
-        </ToolTip.Tip>
-      </Button> -->
-    </StackPanel>
-
-    <!-- 设备列表 -->
-    <Grid Margin="0,0,0,10">
-      <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="Auto" />
-        <ColumnDefinition Width="*" />
-      </Grid.ColumnDefinitions>
-      <TextBlock Text="设备列表"
-                 FontSize="20"
-                 Margin="0,0,10,0"
-                 VerticalAlignment="Center"
-                 Grid.Column="0" />
-      <StackPanel Orientation="Horizontal"
-                  HorizontalAlignment="Left"
-                  Grid.Column="1"
-                  Spacing="10">
-        <!-- 刷新 -->
-        <Button Width="30"
-                Height="30"
-                Margin="5"
-                Background="Transparent"
-                BorderBrush="Transparent"
-                CornerRadius="15"
-                Command="{Binding RefreshDeviceListCommand}">
-          <PathIcon Data="{StaticResource arrow_sync_regular}"
-                    Width="20"
-                    Height="20" />
-          <ToolTip.Tip>
-            <TextBlock Text="刷新" />
-          </ToolTip.Tip>
-        </Button>
-
-        <TextBlock Text="添加设备"
-                   FontSize="20"
-                   Margin="0,0,10,0"
+          <!-- 连接设备 -->
+          <TextBox Text="{Binding TargetDevice}"
+                   Width="200"
+                   Height="30"
+                   Margin="5,0"
                    VerticalAlignment="Center" />
-
-        <!-- 添加设备 -->
-        <TextBox Text="{Binding NewDevice}"
-                 Width="200"
-                 Height="30"
-                 Margin="5,0"
-                 VerticalAlignment="Center" />
-        <Button Width="30"
-                Height="30"
-                Margin="5,0,0,0"
-                Background="Transparent"
-                BorderBrush="Transparent"
-                CornerRadius="15"
-                Command="{Binding AddDeviceCommand}">
-          <PathIcon Data="{StaticResource add_regular}"
-                    Width="20"
-                    Height="20" />
-          <ToolTip.Tip>
-            <TextBlock Text="添加设备" />
-          </ToolTip.Tip>
-        </Button>
-
-        <!-- 地址 -->
-        <!-- <Button Width="30"
-                Height="30"
-                Margin="5"
-                Background="Transparent"
-                BorderBrush="Transparent"
-                CornerRadius="15">
-          <PathIcon Data="{StaticResource communication_regular}"
-                    Width="20"
-                    Height="20" />
-          <ToolTip.Tip>
-            <TextBlock Text="输入地址" />
-          </ToolTip.Tip>
-        </Button> -->
-
-        <!-- 收藏 -->
-        <!-- <Button Width="30"
-                Height="30"
-                Margin="5"
-                Background="Transparent"
-                BorderBrush="Transparent"
-                CornerRadius="15">
-          <PathIcon Data="{StaticResource favorites_regular}"
-                    Width="20"
-                    Height="20" />
-          <ToolTip.Tip>
-            <TextBlock Text="收藏夹" />
-          </ToolTip.Tip>
-        </Button> -->
+          <Button Width="30"
+                  Height="30"
+                  Margin="5,0,0,0"
+                  Background="Transparent"
+                  BorderBrush="Gray"
+                  BorderThickness="1"
+                  CornerRadius="15"
+                  Command="{Binding ConnectDeviceCommand}">
+            <PathIcon Data="{StaticResource add_regular}"
+                      Width="20"
+                      Height="20" />
+            <ToolTip.Tip>
+              <TextBlock Text="连接" />
+            </ToolTip.Tip>
+          </Button>
+        </StackPanel>
       </StackPanel>
     </Grid>
-
-    <!-- 设备列表 -->
-    <StackPanel>
-      <ItemsControl ItemsSource="{Binding DeviceList}">
-        <ItemsControl.ItemTemplate>
-          <DataTemplate>
-            <Button Background="Transparent"
-                    BorderBrush="Gray"
-                    BorderThickness="1"
-                    HorizontalAlignment="Stretch"
-                    VerticalAlignment="Stretch"
-                    Margin="5">
-              <StackPanel Orientation="Horizontal"
-                          Spacing="10">
-                <PathIcon Data="{StaticResource desktop_regular}"
-                          Width="30"
-                          Height="30" />
-                <TextBlock Text="{Binding}"
-                           VerticalAlignment="Center" />
-              </StackPanel>
-            </Button>
-          </DataTemplate>
-        </ItemsControl.ItemTemplate>
-      </ItemsControl>
-    </StackPanel>
-  </StackPanel>
+  </ScrollViewer>
 </UserControl>
