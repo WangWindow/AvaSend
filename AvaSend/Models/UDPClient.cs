@@ -1,190 +1,105 @@
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AvaSend.Models;
-
-/// <summary>
-/// UDP客户端
-/// </summary>
-public class UDPClient
+namespace AvaSend.Models
 {
-    // 设置接口
-    public string Ip { get; set; } = "127.0.0.1";
-
-    public int Port { get; set; } = 8081;
-
-    public string SaveFolderPath { get; set; } =
-        Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            "Downloads",
-            "AvaSend"
-        );
-
-    public int SearchTimeout { get; set; } = 3000; // 毫秒
-
-    private UdpClient _client;
-    private IPEndPoint _endPoint;
-
-    // 启动客户端
-    public async Task StartClientAsync()
+    public class UDPClient
     {
-        if (!Directory.Exists(SaveFolderPath))
+        public string Ip { get; set; } = "127.0.0.1";
+        public int Port { get; set; } = 8081;
+        private UdpClient _client;
+        private const int MAX_CHUNK = 8192; // 8KB chunks
+
+        public void Start() => _client = new UdpClient();
+
+        public void Stop() => _client?.Close();
+
+        public async Task SendTextAsync(string text)
         {
-            Directory.CreateDirectory(SaveFolderPath);
+            await SendPacketAsync('T', Encoding.UTF8.GetBytes(text));
         }
 
-        _client = new UdpClient();
-        _endPoint = new IPEndPoint(IPAddress.Parse(Ip), Port);
-        await Task.CompletedTask;
-    }
-
-    // 停止客户端
-    public void StopClient()
-    {
-        _client?.Close();
-    }
-
-    // 发送数据包
-    private async Task SendPacketAsync(byte[] data)
-    {
-        await _client.SendAsync(data, data.Length, _endPoint);
-    }
-
-    // 发送文本数据
-    public async Task SendTextDataAsync(string text)
-    {
-        try
+        public async Task SendFileAsync(string filePath, string relativePath = null)
         {
-            byte[] typeData = Encoding.UTF8.GetBytes("T");
-            await SendPacketAsync(typeData);
-
-            byte[] msg = Encoding.UTF8.GetBytes(text);
-            byte[] msgLength = BitConverter.GetBytes(msg.Length);
-            await SendPacketAsync(msgLength);
-            await SendPacketAsync(msg);
-            Debug.WriteLine("已发送文本");
-        }
-        catch (Exception e)
-        {
-            Debug.WriteLine($"发送文本失败：{e.Message}");
-        }
-    }
-
-    // 发送文件数据
-    public async Task SendFileDataAsync(string filePath)
-    {
-        try
-        {
-            if (!File.Exists(filePath))
+            try
             {
-                Debug.WriteLine("文件不存在");
-                return;
-            }
+                string fileName = Path.GetFileName(filePath);
+                await SendPacketAsync('F', Encoding.UTF8.GetBytes(fileName));
 
-            byte[] typeData = Encoding.UTF8.GetBytes("F");
-            await SendPacketAsync(typeData);
-
-            byte[] fileNameBytes = Encoding.UTF8.GetBytes(Path.GetFileName(filePath));
-            byte[] fileNameLength = BitConverter.GetBytes(fileNameBytes.Length);
-            await SendPacketAsync(fileNameLength);
-            await SendPacketAsync(fileNameBytes);
-
-            long fileSize = new FileInfo(filePath).Length;
-            byte[] fileSizeBytes = BitConverter.GetBytes(fileSize);
-            await SendPacketAsync(fileSizeBytes);
-
-            using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
-            {
-                byte[] buffer = new byte[8192];
-                int bytesRead;
-                while ((bytesRead = fs.Read(buffer, 0, buffer.Length)) > 0)
+                if (!string.IsNullOrEmpty(relativePath))
                 {
-                    await SendPacketAsync(buffer[..bytesRead]);
+                    await SendPacketAsync('P', Encoding.UTF8.GetBytes(relativePath));
                 }
+
+                using var fs = File.OpenRead(filePath);
+                byte[] buffer = new byte[MAX_CHUNK];
+                int bytesRead;
+
+                while ((bytesRead = await fs.ReadAsync(buffer, 0, MAX_CHUNK)) > 0)
+                {
+                    byte[] chunk = new byte[bytesRead];
+                    Buffer.BlockCopy(buffer, 0, chunk, 0, bytesRead);
+                    await SendPacketAsync('C', chunk);
+                }
+
+                await SendPacketAsync('E', Array.Empty<byte>());
             }
-            Debug.WriteLine("文件已发送");
-        }
-        catch (Exception e)
-        {
-            Debug.WriteLine($"发送文件失败：{e.Message}");
-        }
-    }
-
-    // 发送剪贴板内容
-    public async Task SendClipboardDataAsync(string clipboardText)
-    {
-        try
-        {
-            byte[] typeData = Encoding.UTF8.GetBytes("C");
-            await SendPacketAsync(typeData);
-
-            byte[] textBytes = Encoding.UTF8.GetBytes(clipboardText);
-            byte[] textLength = BitConverter.GetBytes(textBytes.Length);
-            await SendPacketAsync(textLength);
-            await SendPacketAsync(textBytes);
-            Debug.WriteLine("剪贴板内容已发送");
-        }
-        catch (Exception e)
-        {
-            Debug.WriteLine($"发送剪贴板内容失败：{e.Message}");
-        }
-    }
-
-    // 发送文件夹数据
-    public async Task SendFolderDataAsync(string folderPath)
-    {
-        try
-        {
-            if (!Directory.Exists(folderPath))
+            catch (Exception ex)
             {
-                Debug.WriteLine("文件夹不存在");
-                return;
+                throw new Exception($"发送文件失败: {ex.Message}");
             }
+        }
 
-            string folderName = Path.GetFileName(folderPath);
-            byte[] typeData = Encoding.UTF8.GetBytes("D");
-            await SendPacketAsync(typeData);
-
-            byte[] nameBytes = Encoding.UTF8.GetBytes(folderName);
-            byte[] nameLength = BitConverter.GetBytes(nameBytes.Length);
-            await SendPacketAsync(nameLength);
-            await SendPacketAsync(nameBytes);
-
-            string[] files = Directory.GetFiles(folderPath);
-            byte[] fileCount = BitConverter.GetBytes(files.Length);
-            await SendPacketAsync(fileCount);
-
-            foreach (var file in files)
+        public async Task SendFolderAsync(string folderPath)
+        {
+            try
             {
-                await SendFileDataAsync(file);
+                string folderName = Path.GetFileName(folderPath);
+                await SendPacketAsync('D', Encoding.UTF8.GetBytes(folderName));
+
+                foreach (
+                    string file in Directory.GetFiles(
+                        folderPath,
+                        "*.*",
+                        SearchOption.AllDirectories
+                    )
+                )
+                {
+                    string relativePath = Path.GetRelativePath(folderPath, file);
+                    await SendFileAsync(file, relativePath);
+                }
+
+                await SendPacketAsync('E', Array.Empty<byte>());
             }
-            Debug.WriteLine("文件夹数据已发送");
+            catch (Exception ex)
+            {
+                throw new Exception($"发送文件夹失败: {ex.Message}");
+            }
         }
-        catch (Exception e)
+
+        private async Task SendPacketAsync(char type, byte[] data)
         {
-            Debug.WriteLine($"发送文件夹数据失败：{e.Message}");
+            try
+            {
+                byte[] packet = new byte[1 + data.Length];
+                packet[0] = (byte)type;
+                Buffer.BlockCopy(data, 0, packet, 1, data.Length);
+
+                await _client.SendAsync(
+                    packet,
+                    packet.Length,
+                    new IPEndPoint(IPAddress.Parse(Ip), Port)
+                );
+                await Task.Delay(1); // 简单流控
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"发送数据包失败: {ex.Message}");
+            }
         }
-    }
-
-    // 获取唯一文件路径
-    private string GetUniqueFilePath(string filePath)
-    {
-        string directory = Path.GetDirectoryName(filePath) ?? string.Empty;
-        string fileName = Path.GetFileNameWithoutExtension(filePath);
-        string extension = Path.GetExtension(filePath);
-        int count = 1;
-
-        while (File.Exists(filePath))
-        {
-            filePath = Path.Combine(directory, $"{fileName}({count}){extension}");
-            count++;
-        }
-
-        return filePath;
     }
 }

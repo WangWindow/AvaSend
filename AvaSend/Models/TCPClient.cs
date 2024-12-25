@@ -156,7 +156,7 @@ public class TCPClient
     }
 
     // 发送文本数据
-    public void SendTextData(string text)
+    public void SendText(string text)
     {
         if (_sender == null || !_sender.Connected)
         {
@@ -182,7 +182,7 @@ public class TCPClient
     }
 
     // 发送文件数据
-    public void SendFileData(string filePath)
+    public void SendFile(string filePath)
     {
         if (_sender == null || !_sender.Connected)
         {
@@ -227,34 +227,8 @@ public class TCPClient
         }
     }
 
-    // 发送剪贴板内容
-    public void SendClipboardData(string clipboardText)
-    {
-        if (_sender == null || !_sender.Connected)
-        {
-            Debug.WriteLine("未连接到服务器");
-            return;
-        }
-
-        try
-        {
-            byte[] typeData = Encoding.UTF8.GetBytes("C");
-            _sender.Send(typeData);
-
-            byte[] textBytes = Encoding.UTF8.GetBytes(clipboardText);
-            byte[] textLength = BitConverter.GetBytes(textBytes.Length);
-            _sender.Send(textLength);
-            _sender.Send(textBytes);
-            Debug.WriteLine("剪贴板内容已发送");
-        }
-        catch (Exception e)
-        {
-            Debug.WriteLine($"发送剪贴板内容失败：{e.Message}");
-        }
-    }
-
     // 发送文件夹数据
-    public void SendFolderData(string folderPath)
+    public void SendFolder(string folderPath)
     {
         if (_sender == null || !_sender.Connected)
         {
@@ -334,10 +308,8 @@ public class TCPClient
         return filePath;
     }
 
-    // ...existing code...
-
     // 发送文本数据（非阻塞方式）
-    public async Task SendTextDataNonBlockingAsync(string text)
+    public async Task SendTextAsync(string text)
     {
         if (_sender == null || !_sender.Connected)
         {
@@ -363,7 +335,7 @@ public class TCPClient
     }
 
     // 发送文件数据（非阻塞方式）
-    public async Task SendFileDataNonBlockingAsync(string filePath)
+    public async Task SendFileAsync(string filePath)
     {
         if (_sender == null || !_sender.Connected)
         {
@@ -412,7 +384,7 @@ public class TCPClient
     }
 
     // 发送文件夹数据（非阻塞方式）
-    public async Task SendFolderDataNonBlockingAsync(string folderPath)
+    public async Task SendFolderAsync(string folderPath)
     {
         if (_sender == null || !_sender.Connected)
         {
@@ -483,6 +455,4 @@ public class TCPClient
             Debug.WriteLine($"发送文件夹数据失败：{e.Message}");
         }
     }
-
-    // ...existing code...
 }

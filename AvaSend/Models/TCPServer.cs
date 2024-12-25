@@ -161,33 +161,14 @@ public class TCPServer
 
             switch (dataType)
             {
-                // case 'T':
-                //     await HandleTextDataAsync(handler);
-                //     break;
-                // case 'F':
-                //     await HandleFileDataAsync(handler, SaveFolderPath);
-                //     break;
-                // case 'C':
-                //     await HandleClipboardDataAsync(handler);
-                //     break;
-                // case 'D':
-                //     await HandleFolderDataAsync(handler, SaveFolderPath);
-                //     break;
-                // default:
-                //     Debug.WriteLine("未知的数据类型");
-                //     break;
                 case 'T':
-                    await HandleTextDataNonBlockingAsync(handler);
+                    await HandleTextDataAsync(handler);
                     break;
                 case 'F':
-
-                    await HandleFileDataNonBlockingAsync(handler, SaveFolderPath);
-                    break;
-                case 'C':
-                    await HandleClipboardDataAsync(handler);
+                    await HandleFileDataAsync(handler, SaveFolderPath);
                     break;
                 case 'D':
-                    await HandleFolderDataNonBlockingAsync(handler, SaveFolderPath);
+                    await HandleFolderDataAsync(handler, SaveFolderPath);
                     break;
                 default:
                     Debug.WriteLine("未知的数据类型");
@@ -203,7 +184,353 @@ public class TCPServer
         }
     }
 
-    // 处理文本数据
+    /*
+        // 处理文本数据
+        private async Task HandleTextDataAsync(Socket handler)
+        {
+            try
+            {
+                byte[] bufferLength = new byte[4];
+                int bytesReceived = await handler.ReceiveAsync(
+                    new ArraySegment<byte>(bufferLength),
+                    SocketFlags.None
+                );
+                int textLength = BitConverter.ToInt32(bufferLength, 0);
+
+                byte[] buffer = new byte[textLength];
+                bytesReceived = await handler.ReceiveAsync(
+                    new ArraySegment<byte>(buffer),
+                    SocketFlags.None
+                );
+                string receivedText = Encoding.UTF8.GetString(buffer, 0, bytesReceived);
+                Debug.WriteLine("接收到的文本: " + receivedText);
+
+                // 在主线程上弹出窗口显示文本内容
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    var textBox = new TextBox
+                    {
+                        Text = receivedText,
+                        AcceptsReturn = true,
+                        TextWrapping = TextWrapping.Wrap,
+                    };
+                    var scrollViewer = new ScrollViewer
+                    {
+                        Content = textBox,
+                        VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    };
+                    var window = new Window
+                    {
+                        Title = "接收到的文本",
+                        Width = 400,
+                        Height = 300,
+                        Content = scrollViewer,
+                    };
+                    window.Show();
+                });
+
+                // 发送确认消息
+                string confirmation = "文本已接收";
+                byte[] confirmationBytes = Encoding.UTF8.GetBytes(confirmation);
+                byte[] confirmationLength = BitConverter.GetBytes(confirmationBytes.Length);
+                await handler.SendAsync(new ArraySegment<byte>(confirmationLength), SocketFlags.None);
+                await handler.SendAsync(new ArraySegment<byte>(confirmationBytes), SocketFlags.None);
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine($"处理文本数据时发生错误：{e.Message}");
+            }
+        }
+
+        // 处理文件数据
+        private async Task HandleFileDataAsync(Socket handler, string folderPath)
+        {
+            try
+            {
+                // 接收文件名长度
+                byte[] nameLengthBuffer = new byte[4];
+                int bytesReceived = await handler.ReceiveAsync(
+                    new ArraySegment<byte>(nameLengthBuffer),
+                    SocketFlags.None
+                );
+                int nameLength = BitConverter.ToInt32(nameLengthBuffer, 0);
+
+                // 接收文件名
+                byte[] nameBuffer = new byte[nameLength];
+                bytesReceived = await handler.ReceiveAsync(
+                    new ArraySegment<byte>(nameBuffer),
+                    SocketFlags.None
+                );
+                string fileName = Encoding.UTF8.GetString(nameBuffer, 0, bytesReceived);
+
+                // 接收文件大小
+                byte[] sizeBuffer = new byte[8];
+                bytesReceived = await handler.ReceiveAsync(
+                    new ArraySegment<byte>(sizeBuffer),
+                    SocketFlags.None
+                );
+                long fileSize = BitConverter.ToInt64(sizeBuffer, 0);
+
+                // 检查并创建文件夹
+                if (!Directory.Exists(folderPath))
+                {
+                    Debug.WriteLine("文件夹不存在，正在创建...");
+                    Directory.CreateDirectory(folderPath);
+                }
+
+                string savePath = Path.Combine(folderPath, fileName);
+
+                // 检查文件是否已存在
+                if (File.Exists(savePath))
+                {
+                    savePath = GetUniqueFilePath(savePath);
+                    Debug.WriteLine($"文件已存在，保存为新文件：{savePath}");
+                }
+
+                // 接收文件数据
+                using (FileStream fs = new FileStream(savePath, FileMode.Create, FileAccess.Write))
+                {
+                    byte[] buffer = new byte[8192];
+                    long totalBytesReceived = 0;
+                    while (totalBytesReceived < fileSize)
+                    {
+                        int bytesToReceive = (int)
+                            Math.Min(buffer.Length, fileSize - totalBytesReceived);
+                        bytesReceived = await handler.ReceiveAsync(
+                            new ArraySegment<byte>(buffer, 0, bytesToReceive),
+                            SocketFlags.None
+                        );
+                        if (bytesReceived == 0)
+                        {
+                            throw new SocketException();
+                        }
+                        await fs.WriteAsync(buffer, 0, bytesReceived);
+                        totalBytesReceived += bytesReceived;
+                    }
+                }
+                Debug.WriteLine("文件已保存到 " + savePath);
+
+                // 发送确认消息
+                string confirmation = "文件已接收";
+                byte[] confirmationBytes = Encoding.UTF8.GetBytes(confirmation);
+                byte[] confirmationLength = BitConverter.GetBytes(confirmationBytes.Length);
+                await handler.SendAsync(new ArraySegment<byte>(confirmationLength), SocketFlags.None);
+                await handler.SendAsync(new ArraySegment<byte>(confirmationBytes), SocketFlags.None);
+
+                // 接收完毕后弹出接收完毕弹窗并关闭进度条窗口
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    var window = new Window
+                    {
+                        Title = "接收完毕",
+                        Width = 300,
+                        Height = 100,
+                        Content = new TextBlock
+                        {
+                            Text = "文件接收完毕",
+                            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                        },
+                    };
+                    window.Show();
+                });
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine($"处理文件数据时发生错误：{e.Message}");
+            }
+        }
+
+        // 处理文件夹数据
+        private async Task HandleFolderDataAsync(Socket handler, string folderPath)
+        {
+            try
+            {
+                // 接收文件夹名长度
+                byte[] nameLengthBuffer = new byte[4];
+                int bytesReceived = await handler.ReceiveAsync(
+                    new ArraySegment<byte>(nameLengthBuffer),
+                    SocketFlags.None
+                );
+                int nameLength = BitConverter.ToInt32(nameLengthBuffer, 0);
+
+                // 接收文件夹名
+                byte[] nameBuffer = new byte[nameLength];
+                bytesReceived = await handler.ReceiveAsync(
+                    new ArraySegment<byte>(nameBuffer),
+                    SocketFlags.None
+                );
+                string folderName = Encoding.UTF8.GetString(nameBuffer, 0, bytesReceived);
+
+                string folderPathFull = Path.Combine(folderPath, folderName);
+
+                if (!Directory.Exists(folderPathFull))
+                {
+                    Directory.CreateDirectory(folderPathFull);
+                    Debug.WriteLine($"文件夹已创建：{folderPathFull}");
+                }
+                else
+                {
+                    Debug.WriteLine($"文件夹已存在：{folderPathFull}");
+                }
+
+                // 接收文件数量
+                byte[] fileCountBuffer = new byte[4];
+                bytesReceived = await handler.ReceiveAsync(
+                    new ArraySegment<byte>(fileCountBuffer),
+                    SocketFlags.None
+                );
+                int fileCount = BitConverter.ToInt32(fileCountBuffer, 0);
+
+                for (int i = 0; i < fileCount; i++)
+                {
+                    // 接收文件相对路径长度
+                    bytesReceived = await handler.ReceiveAsync(
+                        new ArraySegment<byte>(nameLengthBuffer),
+                        SocketFlags.None
+                    );
+                    nameLength = BitConverter.ToInt32(nameLengthBuffer, 0);
+
+                    // 接收文件相对路径
+                    nameBuffer = new byte[nameLength];
+                    bytesReceived = await handler.ReceiveAsync(
+                        new ArraySegment<byte>(nameBuffer),
+                        SocketFlags.None
+                    );
+                    string relativePath = Encoding.UTF8.GetString(nameBuffer, 0, bytesReceived);
+
+                    // 接收文件大小
+                    byte[] sizeBuffer = new byte[8];
+                    bytesReceived = await handler.ReceiveAsync(
+                        new ArraySegment<byte>(sizeBuffer),
+                        SocketFlags.None
+                    );
+                    long fileSize = BitConverter.ToInt64(sizeBuffer, 0);
+
+                    string savePath = Path.Combine(folderPathFull, relativePath);
+                    string saveDirectory = Path.GetDirectoryName(savePath);
+
+                    // 检查并创建文件夹
+                    if (!Directory.Exists(saveDirectory))
+                    {
+                        Directory.CreateDirectory(saveDirectory);
+                        Debug.WriteLine($"文件夹已创建：{saveDirectory}");
+                    }
+
+                    // 检查文件是否已存在
+                    if (File.Exists(savePath))
+                    {
+                        savePath = GetUniqueFilePath(savePath);
+                        Debug.WriteLine($"文件已存在，保存为新文件：{savePath}");
+                    }
+
+                    // 接收文件数据
+                    using (FileStream fs = new FileStream(savePath, FileMode.Create, FileAccess.Write))
+                    {
+                        byte[] buffer = new byte[8192];
+                        long totalBytesReceived = 0;
+                        while (totalBytesReceived < fileSize)
+                        {
+                            int bytesToReceive = (int)
+                                Math.Min(buffer.Length, fileSize - totalBytesReceived);
+                            bytesReceived = await handler.ReceiveAsync(
+                                new ArraySegment<byte>(buffer, 0, bytesToReceive),
+                                SocketFlags.None
+                            );
+                            if (bytesReceived == 0)
+                            {
+                                throw new SocketException();
+                            }
+                            await fs.WriteAsync(buffer, 0, bytesReceived);
+                            totalBytesReceived += bytesReceived;
+                        }
+                    }
+                    Debug.WriteLine("文件已保存到 " + savePath);
+                }
+
+                // 发送确认消息
+                string confirmation = "文件夹及其内容已接收";
+                byte[] confirmationBytes = Encoding.UTF8.GetBytes(confirmation);
+                byte[] confirmationLength = BitConverter.GetBytes(confirmationBytes.Length);
+                await handler.SendAsync(new ArraySegment<byte>(confirmationLength), SocketFlags.None);
+                await handler.SendAsync(new ArraySegment<byte>(confirmationBytes), SocketFlags.None);
+
+                // 接收完毕后弹出接收完毕弹窗并关闭进度条窗口
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    var window = new Window
+                    {
+                        Title = "接收完毕",
+                        Width = 300,
+                        Height = 100,
+                        Content = new TextBlock
+                        {
+                            Text = "文件夹接收完毕",
+                            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                        },
+                    };
+                    window.Show();
+                });
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine($"处理文件夹数据时发生错误：{e.Message}");
+            }
+        }
+
+        // 处理剪贴板数据
+        private async Task HandleClipboardDataAsync(Socket handler)
+        {
+            try
+            {
+                byte[] bufferLength = new byte[4];
+                int bytesReceived = await handler.ReceiveAsync(
+                    new ArraySegment<byte>(bufferLength),
+                    SocketFlags.None
+                );
+                int textLength = BitConverter.ToInt32(bufferLength, 0);
+
+                byte[] buffer = new byte[textLength];
+                bytesReceived = await handler.ReceiveAsync(
+                    new ArraySegment<byte>(buffer),
+                    SocketFlags.None
+                );
+                string clipboardText = Encoding.UTF8.GetString(buffer, 0, bytesReceived);
+                Debug.WriteLine("接收到的剪贴板内容: " + clipboardText);
+
+                // 发送确认消息
+                string confirmation = "剪贴板内容已接收";
+                byte[] confirmationBytes = Encoding.UTF8.GetBytes(confirmation);
+                byte[] confirmationLength = BitConverter.GetBytes(confirmationBytes.Length);
+                await handler.SendAsync(new ArraySegment<byte>(confirmationLength), SocketFlags.None);
+                await handler.SendAsync(new ArraySegment<byte>(confirmationBytes), SocketFlags.None);
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine($"处理剪贴板数据时发生错误：{e.Message}");
+            }
+        }
+        */
+
+    // 获取唯一文件路径
+    private string GetUniqueFilePath(string filePath)
+    {
+        string directory = Path.GetDirectoryName(filePath) ?? string.Empty;
+        string fileName = Path.GetFileNameWithoutExtension(filePath);
+        string extension = Path.GetExtension(filePath);
+        int count = 1;
+
+        while (File.Exists(filePath))
+        {
+            filePath = Path.Combine(directory, $"{fileName}({count}){extension}");
+            count++;
+        }
+
+        return filePath;
+    }
+
+    // 处理文本数据（非阻塞方式）
     private async Task HandleTextDataAsync(Socket handler)
     {
         try
@@ -260,354 +587,8 @@ public class TCPServer
         }
     }
 
-    // 处理文件数据
-    private async Task HandleFileDataAsync(Socket handler, string folderPath)
-    {
-        try
-        {
-            // 接收文件名长度
-            byte[] nameLengthBuffer = new byte[4];
-            int bytesReceived = await handler.ReceiveAsync(
-                new ArraySegment<byte>(nameLengthBuffer),
-                SocketFlags.None
-            );
-            int nameLength = BitConverter.ToInt32(nameLengthBuffer, 0);
-
-            // 接收文件名
-            byte[] nameBuffer = new byte[nameLength];
-            bytesReceived = await handler.ReceiveAsync(
-                new ArraySegment<byte>(nameBuffer),
-                SocketFlags.None
-            );
-            string fileName = Encoding.UTF8.GetString(nameBuffer, 0, bytesReceived);
-
-            // 接收文件大小
-            byte[] sizeBuffer = new byte[8];
-            bytesReceived = await handler.ReceiveAsync(
-                new ArraySegment<byte>(sizeBuffer),
-                SocketFlags.None
-            );
-            long fileSize = BitConverter.ToInt64(sizeBuffer, 0);
-
-            // 检查并创建文件夹
-            if (!Directory.Exists(folderPath))
-            {
-                Debug.WriteLine("文件夹不存在，正在创建...");
-                Directory.CreateDirectory(folderPath);
-            }
-
-            string savePath = Path.Combine(folderPath, fileName);
-
-            // 检查文件是否已存在
-            if (File.Exists(savePath))
-            {
-                savePath = GetUniqueFilePath(savePath);
-                Debug.WriteLine($"文件已存在，保存为新文件：{savePath}");
-            }
-
-            // 接收文件数据
-            using (FileStream fs = new FileStream(savePath, FileMode.Create, FileAccess.Write))
-            {
-                byte[] buffer = new byte[8192];
-                long totalBytesReceived = 0;
-                while (totalBytesReceived < fileSize)
-                {
-                    int bytesToReceive = (int)
-                        Math.Min(buffer.Length, fileSize - totalBytesReceived);
-                    bytesReceived = await handler.ReceiveAsync(
-                        new ArraySegment<byte>(buffer, 0, bytesToReceive),
-                        SocketFlags.None
-                    );
-                    if (bytesReceived == 0)
-                    {
-                        throw new SocketException();
-                    }
-                    await fs.WriteAsync(buffer, 0, bytesReceived);
-                    totalBytesReceived += bytesReceived;
-                }
-            }
-            Debug.WriteLine("文件已保存到 " + savePath);
-
-            // 发送确认消息
-            string confirmation = "文件已接收";
-            byte[] confirmationBytes = Encoding.UTF8.GetBytes(confirmation);
-            byte[] confirmationLength = BitConverter.GetBytes(confirmationBytes.Length);
-            await handler.SendAsync(new ArraySegment<byte>(confirmationLength), SocketFlags.None);
-            await handler.SendAsync(new ArraySegment<byte>(confirmationBytes), SocketFlags.None);
-
-            // 接收完毕后弹出接收完毕弹窗并关闭进度条窗口
-            await Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                var window = new Window
-                {
-                    Title = "接收完毕",
-                    Width = 300,
-                    Height = 100,
-                    Content = new TextBlock
-                    {
-                        Text = "文件接收完毕",
-                        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-                        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                    },
-                };
-                window.Show();
-            });
-        }
-        catch (Exception e)
-        {
-            Debug.WriteLine($"处理文件数据时发生错误：{e.Message}");
-        }
-    }
-
-    // 处理文件夹数据
-    private async Task HandleFolderDataAsync(Socket handler, string folderPath)
-    {
-        try
-        {
-            // 接收文件夹名长度
-            byte[] nameLengthBuffer = new byte[4];
-            int bytesReceived = await handler.ReceiveAsync(
-                new ArraySegment<byte>(nameLengthBuffer),
-                SocketFlags.None
-            );
-            int nameLength = BitConverter.ToInt32(nameLengthBuffer, 0);
-
-            // 接收文件夹名
-            byte[] nameBuffer = new byte[nameLength];
-            bytesReceived = await handler.ReceiveAsync(
-                new ArraySegment<byte>(nameBuffer),
-                SocketFlags.None
-            );
-            string folderName = Encoding.UTF8.GetString(nameBuffer, 0, bytesReceived);
-
-            string folderPathFull = Path.Combine(folderPath, folderName);
-
-            if (!Directory.Exists(folderPathFull))
-            {
-                Directory.CreateDirectory(folderPathFull);
-                Debug.WriteLine($"文件夹已创建：{folderPathFull}");
-            }
-            else
-            {
-                Debug.WriteLine($"文件夹已存在：{folderPathFull}");
-            }
-
-            // 接收文件数量
-            byte[] fileCountBuffer = new byte[4];
-            bytesReceived = await handler.ReceiveAsync(
-                new ArraySegment<byte>(fileCountBuffer),
-                SocketFlags.None
-            );
-            int fileCount = BitConverter.ToInt32(fileCountBuffer, 0);
-
-            for (int i = 0; i < fileCount; i++)
-            {
-                // 接收文件相对路径长度
-                bytesReceived = await handler.ReceiveAsync(
-                    new ArraySegment<byte>(nameLengthBuffer),
-                    SocketFlags.None
-                );
-                nameLength = BitConverter.ToInt32(nameLengthBuffer, 0);
-
-                // 接收文件相对路径
-                nameBuffer = new byte[nameLength];
-                bytesReceived = await handler.ReceiveAsync(
-                    new ArraySegment<byte>(nameBuffer),
-                    SocketFlags.None
-                );
-                string relativePath = Encoding.UTF8.GetString(nameBuffer, 0, bytesReceived);
-
-                // 接收文件大小
-                byte[] sizeBuffer = new byte[8];
-                bytesReceived = await handler.ReceiveAsync(
-                    new ArraySegment<byte>(sizeBuffer),
-                    SocketFlags.None
-                );
-                long fileSize = BitConverter.ToInt64(sizeBuffer, 0);
-
-                string savePath = Path.Combine(folderPathFull, relativePath);
-                string saveDirectory = Path.GetDirectoryName(savePath);
-
-                // 检查并创建文件夹
-                if (!Directory.Exists(saveDirectory))
-                {
-                    Directory.CreateDirectory(saveDirectory);
-                    Debug.WriteLine($"文件夹已创建：{saveDirectory}");
-                }
-
-                // 检查文件是否已存在
-                if (File.Exists(savePath))
-                {
-                    savePath = GetUniqueFilePath(savePath);
-                    Debug.WriteLine($"文件已存在，保存为新文件：{savePath}");
-                }
-
-                // 接收文件数据
-                using (FileStream fs = new FileStream(savePath, FileMode.Create, FileAccess.Write))
-                {
-                    byte[] buffer = new byte[8192];
-                    long totalBytesReceived = 0;
-                    while (totalBytesReceived < fileSize)
-                    {
-                        int bytesToReceive = (int)
-                            Math.Min(buffer.Length, fileSize - totalBytesReceived);
-                        bytesReceived = await handler.ReceiveAsync(
-                            new ArraySegment<byte>(buffer, 0, bytesToReceive),
-                            SocketFlags.None
-                        );
-                        if (bytesReceived == 0)
-                        {
-                            throw new SocketException();
-                        }
-                        await fs.WriteAsync(buffer, 0, bytesReceived);
-                        totalBytesReceived += bytesReceived;
-                    }
-                }
-                Debug.WriteLine("文件已保存到 " + savePath);
-            }
-
-            // 发送确认消息
-            string confirmation = "文件夹及其内容已接收";
-            byte[] confirmationBytes = Encoding.UTF8.GetBytes(confirmation);
-            byte[] confirmationLength = BitConverter.GetBytes(confirmationBytes.Length);
-            await handler.SendAsync(new ArraySegment<byte>(confirmationLength), SocketFlags.None);
-            await handler.SendAsync(new ArraySegment<byte>(confirmationBytes), SocketFlags.None);
-
-            // 接收完毕后弹出接收完毕弹窗并关闭进度条窗口
-            await Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                var window = new Window
-                {
-                    Title = "接收完毕",
-                    Width = 300,
-                    Height = 100,
-                    Content = new TextBlock
-                    {
-                        Text = "文件夹接收完毕",
-                        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-                        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                    },
-                };
-                window.Show();
-            });
-        }
-        catch (Exception e)
-        {
-            Debug.WriteLine($"处理文件夹数据时发生错误：{e.Message}");
-        }
-    }
-
-    // 处理剪贴板数据
-    private async Task HandleClipboardDataAsync(Socket handler)
-    {
-        try
-        {
-            byte[] bufferLength = new byte[4];
-            int bytesReceived = await handler.ReceiveAsync(
-                new ArraySegment<byte>(bufferLength),
-                SocketFlags.None
-            );
-            int textLength = BitConverter.ToInt32(bufferLength, 0);
-
-            byte[] buffer = new byte[textLength];
-            bytesReceived = await handler.ReceiveAsync(
-                new ArraySegment<byte>(buffer),
-                SocketFlags.None
-            );
-            string clipboardText = Encoding.UTF8.GetString(buffer, 0, bytesReceived);
-            Debug.WriteLine("接收到的剪贴板内容: " + clipboardText);
-
-            // 发送确认消息
-            string confirmation = "剪贴板内容已接收";
-            byte[] confirmationBytes = Encoding.UTF8.GetBytes(confirmation);
-            byte[] confirmationLength = BitConverter.GetBytes(confirmationBytes.Length);
-            await handler.SendAsync(new ArraySegment<byte>(confirmationLength), SocketFlags.None);
-            await handler.SendAsync(new ArraySegment<byte>(confirmationBytes), SocketFlags.None);
-        }
-        catch (Exception e)
-        {
-            Debug.WriteLine($"处理剪贴板数据时发生错误：{e.Message}");
-        }
-    }
-
-    // 获取唯一文件路径
-    private string GetUniqueFilePath(string filePath)
-    {
-        string directory = Path.GetDirectoryName(filePath) ?? string.Empty;
-        string fileName = Path.GetFileNameWithoutExtension(filePath);
-        string extension = Path.GetExtension(filePath);
-        int count = 1;
-
-        while (File.Exists(filePath))
-        {
-            filePath = Path.Combine(directory, $"{fileName}({count}){extension}");
-            count++;
-        }
-
-        return filePath;
-    }
-
-    // ...existing code...
-
-    // 处理文本数据（非阻塞方式）
-    private async Task HandleTextDataNonBlockingAsync(Socket handler)
-    {
-        try
-        {
-            byte[] bufferLength = new byte[4];
-            int bytesReceived = await handler.ReceiveAsync(
-                new ArraySegment<byte>(bufferLength),
-                SocketFlags.None
-            );
-            int textLength = BitConverter.ToInt32(bufferLength, 0);
-
-            byte[] buffer = new byte[textLength];
-            bytesReceived = await handler.ReceiveAsync(
-                new ArraySegment<byte>(buffer),
-                SocketFlags.None
-            );
-            string receivedText = Encoding.UTF8.GetString(buffer, 0, bytesReceived);
-            Debug.WriteLine("接收到的文本: " + receivedText);
-
-            // 在主线程上弹出窗口显示文本内容
-            await Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                var textBox = new TextBox
-                {
-                    Text = receivedText,
-                    AcceptsReturn = true,
-                    TextWrapping = TextWrapping.Wrap,
-                };
-                var scrollViewer = new ScrollViewer
-                {
-                    Content = textBox,
-                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                };
-                var window = new Window
-                {
-                    Title = "接收到的文本",
-                    Width = 400,
-                    Height = 300,
-                    Content = scrollViewer,
-                };
-                window.Show();
-            });
-
-            // 发送确认消息
-            string confirmation = "文本已接收";
-            byte[] confirmationBytes = Encoding.UTF8.GetBytes(confirmation);
-            byte[] confirmationLength = BitConverter.GetBytes(confirmationBytes.Length);
-            await handler.SendAsync(new ArraySegment<byte>(confirmationLength), SocketFlags.None);
-            await handler.SendAsync(new ArraySegment<byte>(confirmationBytes), SocketFlags.None);
-        }
-        catch (Exception e)
-        {
-            Debug.WriteLine($"处理文本数据时发生错误：{e.Message}");
-        }
-    }
-
     // 处理文件数据（非阻塞方式）
-    private async Task HandleFileDataNonBlockingAsync(Socket handler, string folderPath)
+    private async Task HandleFileDataAsync(Socket handler, string folderPath)
     {
         Window progressWindow = null;
         ProgressBar progressBar = null;
@@ -739,7 +720,7 @@ public class TCPServer
     }
 
     // 处理文件夹数据（非阻塞方式）
-    private async Task HandleFolderDataNonBlockingAsync(Socket handler, string folderPath)
+    private async Task HandleFolderDataAsync(Socket handler, string folderPath)
     {
         Window progressWindow = null;
         ProgressBar progressBar = null;
@@ -913,6 +894,4 @@ public class TCPServer
             });
         }
     }
-
-    // ...existing code...
 }

@@ -30,71 +30,105 @@ public class SendViewModel : ReactiveObject
         ConnectDeviceCommand = ReactiveCommand.Create(ConnectDevice);
     }
 
+    // 是否 TCP
+    private bool IsTcp => _dataService.Protocol == "TCP";
+
+    // 是否已连接(仅 TCP 用)
+    private bool _isConnected;
+    public bool IsConnected
+    {
+        get => _isConnected;
+        set => this.RaiseAndSetIfChanged(ref _isConnected, value);
+    }
+
     // 发送类型选择
     private bool _isFileSelected;
-
     public bool IsFileSelected
     {
         get => _isFileSelected;
-        set => this.RaiseAndSetIfChanged(ref _isFileSelected, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _isFileSelected, value);
+            this.RaisePropertyChanged(nameof(CanSend));
+        }
     }
 
     private bool _isFolderSelected;
-
     public bool IsFolderSelected
     {
         get => _isFolderSelected;
-        set => this.RaiseAndSetIfChanged(ref _isFolderSelected, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _isFolderSelected, value);
+            this.RaisePropertyChanged(nameof(CanSend));
+        }
     }
 
     private bool _isTextSelected;
-
     public bool IsTextSelected
     {
         get => _isTextSelected;
-        set => this.RaiseAndSetIfChanged(ref _isTextSelected, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _isTextSelected, value);
+            this.RaisePropertyChanged(nameof(CanSend));
+        }
     }
 
     private string _inputData;
-
     public string InputData
     {
         get => _inputData;
-        set => this.RaiseAndSetIfChanged(ref _inputData, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _inputData, value);
+            this.RaisePropertyChanged(nameof(CanSend));
+        }
     }
 
     public bool IsInputReadOnly => !IsTextSelected;
 
     private string _targetDevice;
-
     public string TargetDevice
     {
         get => _targetDevice;
-        set => this.RaiseAndSetIfChanged(ref _targetDevice, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _targetDevice, value);
+            this.RaisePropertyChanged(nameof(CanSend));
+        }
     }
 
-    // 传输进度
     private double _progress;
-
     public double Progress
     {
         get => _progress;
         set => this.RaiseAndSetIfChanged(ref _progress, value);
     }
 
-    // 状态消息
     private string _statusMessage;
-
     public string StatusMessage
     {
         get => _statusMessage;
         set => this.RaiseAndSetIfChanged(ref _statusMessage, value);
     }
 
-    // 是否可以发送
-    public bool CanSend => !string.IsNullOrEmpty(TargetDevice) && !string.IsNullOrEmpty(InputData);
+    // 根据协议区分是否可发送: TCP 需已连接且已选发送类型；UDP 只需已选发送类型
+    public bool CanSend
+    {
+        get
+        {
+            bool anyTypeSelected = IsFileSelected || IsFolderSelected || IsTextSelected;
+            if (IsTcp)
+                return IsConnected && anyTypeSelected;
+            else
+                return anyTypeSelected;
+        }
+    }
 
-    // 命令
+    // UDP 模式下连接按钮禁用 (只有 TCP 时启用)
+    public bool IsConnectButtonEnabled => IsTcp;
+
     public ReactiveCommand<Unit, Unit> SelectFileCommand { get; }
     public ReactiveCommand<Unit, Unit> SelectFolderCommand { get; }
     public ReactiveCommand<Unit, Unit> SelectTextCommand { get; }
@@ -118,7 +152,6 @@ public class SendViewModel : ReactiveObject
                 IsFolderSelected = false;
                 IsTextSelected = false;
                 this.RaisePropertyChanged(nameof(IsInputReadOnly));
-                this.RaisePropertyChanged(nameof(CanSend));
             }
         }
     }
@@ -140,7 +173,6 @@ public class SendViewModel : ReactiveObject
                 IsFolderSelected = true;
                 IsTextSelected = false;
                 this.RaisePropertyChanged(nameof(IsInputReadOnly));
-                this.RaisePropertyChanged(nameof(CanSend));
             }
         }
     }
@@ -152,36 +184,37 @@ public class SendViewModel : ReactiveObject
         IsFolderSelected = false;
         IsTextSelected = true;
         this.RaisePropertyChanged(nameof(IsInputReadOnly));
-        this.RaisePropertyChanged(nameof(CanSend));
     }
 
-    private void ConnectDevice()
+    private async void ConnectDevice()
     {
-        // 分割 TargetDevice 字符串
-        var parts = TargetDevice.Split(':');
-        if (parts.Length == 2)
+        IsConnected = false;
+        var parts = TargetDevice?.Split(':');
+        if (parts != null && parts.Length == 2)
         {
             var TargetDeviceIP = parts[0];
             var TargetDevicePort = parts[1];
 
-            // 初始化客户端
-            if (_dataService.Protocol == "TCP")
+            if (IsTcp)
             {
                 _tcpClient = new TCPClient
                 {
                     Ip = TargetDeviceIP,
                     Port = int.Parse(TargetDevicePort),
                 };
-                _tcpClient.StartClientAsync();
-            }
-            else if (_dataService.Protocol == "UDP")
-            {
-                _udpClient = new UDPClient
+                try
                 {
-                    Ip = TargetDeviceIP,
-                    Port = int.Parse(TargetDevicePort),
-                };
-                _udpClient.StartClientAsync();
+                    await _tcpClient.StartClientAsync();
+                    IsConnected = true;
+                }
+                catch
+                {
+                    IsConnected = false;
+                }
+            }
+            else
+            {
+                return;
             }
         }
         this.RaisePropertyChanged(nameof(CanSend));
@@ -192,62 +225,67 @@ public class SendViewModel : ReactiveObject
         Progress = 0;
         StatusMessage = string.Empty;
 
-        if (_dataService.Protocol == "TCP")
+        if (IsTcp)
         {
             // 使用 TCP 传输
-            // _tcpClient.Ip = TargetDevice;
-            // if (IsFileSelected)
-            // {
-            //     _tcpClient.SendFileData(InputData);
-            // }
-            // else if (IsFolderSelected)
-            // {
-            //     _tcpClient.SendFolderData(InputData);
-            // }
-            // else if (IsTextSelected)
-            // {
-            //     _tcpClient.SendTextData(InputData);
-            // }
-            _tcpClient.Ip = TargetDevice;
+            if (_tcpClient == null)
+            {
+                _tcpClient = new TCPClient();
+                var parts = TargetDevice?.Split(':');
+                if (parts != null && parts.Length == 2)
+                {
+                    _tcpClient.Ip = parts[0];
+                    _tcpClient.Port = int.Parse(parts[1]);
+                }
+                try
+                {
+                    await _tcpClient.StartClientAsync();
+                    IsConnected = true;
+                }
+                catch
+                {
+                    IsConnected = false;
+                }
+            }
+
             if (IsFileSelected)
             {
-                _tcpClient.SendFileDataNonBlockingAsync(InputData);
+                await _tcpClient.SendFileAsync(InputData);
             }
             else if (IsFolderSelected)
             {
-                _tcpClient.SendFolderDataNonBlockingAsync(InputData);
+                await _tcpClient.SendFolderAsync(InputData);
             }
             else if (IsTextSelected)
             {
-                _tcpClient.SendTextDataNonBlockingAsync(InputData);
+                await _tcpClient.SendTextAsync(InputData);
             }
         }
-        else if (_dataService.Protocol == "UDP")
+        else
         {
             // 使用 UDP 传输
-            _udpClient.Ip = TargetDevice;
+            if (_udpClient == null)
+            {
+                var parts = TargetDevice?.Split(':');
+                if (parts != null && parts.Length == 2)
+                {
+                    _udpClient = new UDPClient { Ip = parts[0], Port = int.Parse(parts[1]) };
+                    _udpClient.Start();
+                }
+            }
+
             if (IsFileSelected)
             {
-                await _udpClient.SendFileDataAsync(InputData);
+                await _udpClient.SendFileAsync(InputData);
             }
             else if (IsFolderSelected)
             {
-                await _udpClient.SendFolderDataAsync(InputData);
+                await _udpClient.SendFolderAsync(InputData);
             }
             else if (IsTextSelected)
             {
-                await _udpClient.SendTextDataAsync(InputData);
+                await _udpClient.SendTextAsync(InputData);
             }
         }
-
-        // // 模拟传输进度（实际应用中应根据传输情况更新进度）
-        // for (int i = 0; i <= 100; i++)
-        // {
-        //     Progress = i;
-        //     await Task.Delay(5); // 延时以模拟进度
-        // }
-
-        // // 传输完成提示
-        // StatusMessage = "Done";
     }
 }

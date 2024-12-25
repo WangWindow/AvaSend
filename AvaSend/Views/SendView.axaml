@@ -32,6 +32,9 @@
           <StackPanel Orientation="Horizontal"
                       HorizontalAlignment="Right">
             <Button Content="发送"
+                    BorderBrush="Gray"
+                    BorderThickness="1"
+                    CornerRadius="2"
                     Command="{Binding SendCommand}"
                     IsEnabled="{Binding CanSend}"
                     Margin="0,0,40,0" />
@@ -134,11 +137,11 @@
           <Button Width="30"
                   Height="30"
                   Margin="5,0,0,0"
-                  Background="Transparent"
                   BorderBrush="Gray"
                   BorderThickness="1"
                   CornerRadius="15"
-                  Command="{Binding ConnectDeviceCommand}">
+                  Command="{Binding ConnectDeviceCommand}"
+                  IsEnabled="{Binding IsConnectButtonEnabled}">
             <PathIcon Data="{StaticResource add_regular}"
                       Width="20"
                       Height="20" />
