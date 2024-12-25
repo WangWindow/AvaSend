@@ -224,68 +224,102 @@ public class SendViewModel : ReactiveObject
     {
         Progress = 0;
         StatusMessage = string.Empty;
-
-        if (IsTcp)
+        try
         {
-            // 使用 TCP 传输
-            if (_tcpClient == null)
+            if (IsTcp)
             {
-                _tcpClient = new TCPClient();
-                var parts = TargetDevice?.Split(':');
-                if (parts != null && parts.Length == 2)
+                // 使用 TCP 传输
+                if (_tcpClient == null)
                 {
-                    _tcpClient.Ip = parts[0];
-                    _tcpClient.Port = int.Parse(parts[1]);
+                    _tcpClient = new TCPClient();
+                    var parts = TargetDevice?.Split(':');
+                    if (parts != null && parts.Length == 2)
+                    {
+                        _tcpClient.Ip = parts[0];
+                        _tcpClient.Port = int.Parse(parts[1]);
+                    }
+                    try
+                    {
+                        await _tcpClient.StartClientAsync();
+                        IsConnected = true;
+                    }
+                    catch
+                    {
+                        IsConnected = false;
+                    }
                 }
-                try
-                {
-                    await _tcpClient.StartClientAsync();
-                    IsConnected = true;
-                }
-                catch
-                {
-                    IsConnected = false;
-                }
-            }
 
-            if (IsFileSelected)
-            {
-                await _tcpClient.SendFileAsync(InputData);
+                if (IsFileSelected)
+                {
+                    await _tcpClient.SendFileAsync(InputData);
+                }
+                else if (IsFolderSelected)
+                {
+                    await _tcpClient.SendFolderAsync(InputData);
+                }
+                else if (IsTextSelected)
+                {
+                    await _tcpClient.SendTextAsync(InputData);
+                }
             }
-            else if (IsFolderSelected)
+            else
             {
-                await _tcpClient.SendFolderAsync(InputData);
-            }
-            else if (IsTextSelected)
-            {
-                await _tcpClient.SendTextAsync(InputData);
+                // UDP传输改为非阻塞
+                if (_udpClient == null)
+                {
+                    var parts = TargetDevice?.Split(':');
+                    if (parts != null && parts.Length == 2)
+                    {
+                        _udpClient = new UDPClient { Ip = parts[0], Port = int.Parse(parts[1]) };
+                        _udpClient.Start();
+                    }
+                }
+
+                _udpClient.OnProgress = progress =>
+                {
+                    Dispatcher.UIThread.InvokeAsync(() =>
+                    {
+                        Progress = progress;
+                        StatusMessage = $"传输进度: {progress:F1}%";
+                    });
+                };
+
+                // 启动单独的任务处理传输
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        if (IsFileSelected)
+                        {
+                            await _udpClient.SendFileAsync(InputData);
+                        }
+                        else if (IsFolderSelected)
+                        {
+                            await _udpClient.SendFolderAsync(InputData);
+                        }
+                        else if (IsTextSelected)
+                        {
+                            await _udpClient.SendTextAsync(InputData);
+                        }
+
+                        await Dispatcher.UIThread.InvokeAsync(() =>
+                        {
+                            StatusMessage = "传输完成";
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        await Dispatcher.UIThread.InvokeAsync(() =>
+                        {
+                            StatusMessage = $"传输失败: {ex.Message}";
+                        });
+                    }
+                });
             }
         }
-        else
+        catch (Exception ex)
         {
-            // 使用 UDP 传输
-            if (_udpClient == null)
-            {
-                var parts = TargetDevice?.Split(':');
-                if (parts != null && parts.Length == 2)
-                {
-                    _udpClient = new UDPClient { Ip = parts[0], Port = int.Parse(parts[1]) };
-                    _udpClient.Start();
-                }
-            }
-
-            if (IsFileSelected)
-            {
-                await _udpClient.SendFileAsync(InputData);
-            }
-            else if (IsFolderSelected)
-            {
-                await _udpClient.SendFolderAsync(InputData);
-            }
-            else if (IsTextSelected)
-            {
-                await _udpClient.SendTextAsync(InputData);
-            }
+            StatusMessage = $"发送失败: {ex.Message}";
         }
     }
 }

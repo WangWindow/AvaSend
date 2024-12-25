@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -12,7 +13,11 @@ namespace AvaSend.Models
         public string Ip { get; set; } = "127.0.0.1";
         public int Port { get; set; } = 8081;
         private UdpClient _client;
-        private const int MAX_CHUNK = 8192; // 8KB chunks
+        private const int MAX_CHUNK = 8192;
+
+        // 添加进度回调委托
+        public delegate void ProgressCallback(double progress);
+        public ProgressCallback OnProgress { get; set; }
 
         public void Start() => _client = new UdpClient();
 
@@ -38,12 +43,17 @@ namespace AvaSend.Models
                 using var fs = File.OpenRead(filePath);
                 byte[] buffer = new byte[MAX_CHUNK];
                 int bytesRead;
+                long totalBytes = fs.Length;
+                long sentBytes = 0;
 
                 while ((bytesRead = await fs.ReadAsync(buffer, 0, MAX_CHUNK)) > 0)
                 {
                     byte[] chunk = new byte[bytesRead];
                     Buffer.BlockCopy(buffer, 0, chunk, 0, bytesRead);
                     await SendPacketAsync('C', chunk);
+
+                    sentBytes += bytesRead;
+                    OnProgress?.Invoke((double)sentBytes / totalBytes * 100);
                 }
 
                 await SendPacketAsync('E', Array.Empty<byte>());
@@ -61,16 +71,25 @@ namespace AvaSend.Models
                 string folderName = Path.GetFileName(folderPath);
                 await SendPacketAsync('D', Encoding.UTF8.GetBytes(folderName));
 
-                foreach (
-                    string file in Directory.GetFiles(
-                        folderPath,
-                        "*.*",
-                        SearchOption.AllDirectories
-                    )
-                )
+                var files = Directory.GetFiles(folderPath, "*.*", SearchOption.AllDirectories);
+                long totalSize = files.Sum(f => new FileInfo(f).Length);
+                long sentSize = 0;
+
+                foreach (string file in files)
                 {
                     string relativePath = Path.GetRelativePath(folderPath, file);
+                    var fileSize = new FileInfo(file).Length;
+
+                    var originalCallback = OnProgress;
+                    OnProgress = progress =>
+                    {
+                        double overallProgress =
+                            ((sentSize + (fileSize * progress / 100.0)) / totalSize) * 100;
+                        originalCallback?.Invoke(overallProgress);
+                    };
+
                     await SendFileAsync(file, relativePath);
+                    sentSize += fileSize;
                 }
 
                 await SendPacketAsync('E', Array.Empty<byte>());
@@ -94,7 +113,7 @@ namespace AvaSend.Models
                     packet.Length,
                     new IPEndPoint(IPAddress.Parse(Ip), Port)
                 );
-                await Task.Delay(1); // 简单流控
+                await Task.Delay(1);
             }
             catch (Exception ex)
             {

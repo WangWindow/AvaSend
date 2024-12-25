@@ -97,6 +97,7 @@ namespace AvaSend.Models
                         _currentFolder = Path.Combine(SaveFolderPath, folderName);
                         Directory.CreateDirectory(_currentFolder);
                         _transfers.Clear();
+                        _fileProgress.Clear();
                         await CreateTransferWindowAsync(folderName);
                         break;
 
@@ -104,6 +105,7 @@ namespace AvaSend.Models
                         _currentRelativePath = Encoding.UTF8.GetString(data);
                         break;
 
+                    // 在 HandlePacketAsync 方法中修改 'F' case:
                     case 'F':
                         string fileName = Encoding.UTF8.GetString(data);
                         string filePath;
@@ -142,6 +144,7 @@ namespace AvaSend.Models
                         };
 
                         _transfers.Add(transfer);
+                        await CreateSingleFileTransferWindowAsync(fileName, filePath);
                         await UpdateFileListAsync();
                         break;
 
@@ -178,35 +181,76 @@ namespace AvaSend.Models
             }
         }
 
-        private async Task CreateTransferWindowAsync(string folderName)
+        private async Task CreateSingleFileTransferWindowAsync(string fileName, string savePath)
         {
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
-                _fileListPanel = new StackPanel { Spacing = 5, Margin = new Thickness(10) };
+                _fileListPanel = new StackPanel { Spacing = 10, Margin = new Thickness(10) };
 
                 var scrollViewer = new ScrollViewer
                 {
                     Content = _fileListPanel,
                     VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                    Margin = new Thickness(0, 10, 0, 0),
+                    MinHeight = 150,
                 };
+
+                var headerPanel = new StackPanel { Margin = new Thickness(10), Spacing = 5 };
+
+                // 添加文件名标题
+                headerPanel.Children.Add(
+                    new TextBlock
+                    {
+                        Text = $"接收文件: {fileName}",
+                        FontWeight = FontWeight.Bold,
+                        FontSize = 16,
+                    }
+                );
+
+                // 添加保存路径
+                headerPanel.Children.Add(
+                    new TextBlock { Text = $"保存位置: {savePath}", Foreground = Brushes.Gray }
+                );
+
+                // 添加取消按钮
+                var cancelButton = new Button
+                {
+                    Content = "取消传输",
+                    HorizontalAlignment = HorizontalAlignment.Right,
+                    Margin = new Thickness(0, 10, 0, 0),
+                };
+
+                cancelButton.Click += (s, e) =>
+                {
+                    _currentFile?.Dispose();
+                    _currentFile = null;
+                    _transferWindow?.Close();
+                };
+
+                headerPanel.Children.Add(cancelButton);
 
                 _transferWindow?.Close();
                 _transferWindow = new Window
                 {
-                    Title = $"接收文件夹 - {folderName}",
-                    Width = 600,
-                    Height = 400,
+                    Title = "文件传输",
+                    Width = 500,
+                    Height = 300,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
                     Content = new DockPanel
                     {
+                        LastChildFill = true,
                         Children =
                         {
-                            new TextBlock
+                            headerPanel,
+                            new Border
                             {
-                                Text = $"保存位置: {_currentFolder}",
-                                [DockPanel.DockProperty] = Dock.Top,
+                                Child = scrollViewer,
+                                BorderBrush = Brushes.LightGray,
+                                BorderThickness = new Thickness(1),
                                 Margin = new Thickness(10),
+                                [DockPanel.DockProperty] = Dock.Top,
                             },
-                            scrollViewer,
                         },
                     },
                 };
@@ -215,19 +259,65 @@ namespace AvaSend.Models
             });
         }
 
-        private void UpdateProgress(string filePath, int bytesReceived)
+        private async Task CreateTransferWindowAsync(string folderName)
         {
-            _fileProgress[filePath] = _fileProgress[filePath] + bytesReceived;
-            var fileInfo = new FileInfo(filePath);
-            double progress = (_fileProgress[filePath] * 100.0) / fileInfo.Length;
-
-            Dispatcher.UIThread.InvokeAsync(() =>
+            await Dispatcher.UIThread.InvokeAsync(() =>
             {
-                var transfer = _transfers.FirstOrDefault(x => x.FullPath == filePath);
-                if (transfer?.Progress != null)
+                _fileListPanel = new StackPanel { Spacing = 10, Margin = new Thickness(10) };
+
+                var scrollViewer = new ScrollViewer
                 {
-                    transfer.Progress.Value = Math.Min(progress, 100);
-                }
+                    Content = _fileListPanel,
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                    Margin = new Thickness(0, 10, 0, 0),
+                    MinHeight = 200,
+                };
+
+                var headerPanel = new StackPanel { Margin = new Thickness(10), Spacing = 5 };
+
+                headerPanel.Children.Add(
+                    new TextBlock
+                    {
+                        Text = $"传输文件夹: {folderName}",
+                        FontWeight = FontWeight.Bold,
+                        FontSize = 16,
+                    }
+                );
+
+                headerPanel.Children.Add(
+                    new TextBlock
+                    {
+                        Text = $"保存位置: {_currentFolder}",
+                        Foreground = Brushes.Gray,
+                    }
+                );
+
+                _transferWindow?.Close();
+                _transferWindow = new Window
+                {
+                    Title = "文件夹传输",
+                    Width = 700,
+                    Height = 500,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    Content = new DockPanel
+                    {
+                        Children =
+                        {
+                            headerPanel,
+                            new Border
+                            {
+                                Child = scrollViewer,
+                                BorderBrush = Brushes.LightGray,
+                                BorderThickness = new Thickness(1),
+                                Margin = new Thickness(10),
+                                [DockPanel.DockProperty] = Dock.Top,
+                            },
+                        },
+                    },
+                };
+
+                _transferWindow.Show();
             });
         }
 
@@ -240,35 +330,87 @@ namespace AvaSend.Models
                     _fileListPanel.Children.Clear();
                     foreach (var transfer in _transfers)
                     {
-                        var fileButton = new Button
+                        var container = new Border
                         {
-                            HorizontalAlignment = HorizontalAlignment.Stretch,
+                            Background = transfer.IsCompleted
+                                ? new SolidColorBrush(Color.FromRgb(240, 255, 240))
+                                : Brushes.White,
+                            BorderBrush = Brushes.LightGray,
+                            BorderThickness = new Thickness(1),
+                            CornerRadius = new CornerRadius(4),
                             Padding = new Thickness(10),
                             Margin = new Thickness(0, 0, 0, 5),
-                            Background = transfer.IsCompleted ? Brushes.LightGreen : Brushes.White,
-                            Content = new StackPanel
-                            {
-                                Children =
-                                {
-                                    new TextBlock
-                                    {
-                                        Text = $"文件: {transfer.FileName}",
-                                        FontWeight = FontWeight.Bold,
-                                    },
-                                    new TextBlock
-                                    {
-                                        Text = $"保存位置: {transfer.FullPath}",
-                                        Foreground = Brushes.Gray,
-                                    },
-                                    transfer.Progress,
-                                },
-                            },
+                            Child = new DockPanel(),
                         };
 
+                        var infoPanel = new StackPanel { Spacing = 4 };
+
+                        // 文件名和进度百分比
+                        var headerPanel = new DockPanel();
+                        headerPanel.Children.Add(
+                            new TextBlock
+                            {
+                                Text = transfer.FileName,
+                                FontWeight = FontWeight.Bold,
+                                [DockPanel.DockProperty] = Dock.Left,
+                            }
+                        );
+
+                        var progressText = new TextBlock
+                        {
+                            Text = $"{transfer.Progress.Value:F1}%",
+                            Foreground = Brushes.Gray,
+                            [DockPanel.DockProperty] = Dock.Right,
+                        };
+                        headerPanel.Children.Add(progressText);
+                        infoPanel.Children.Add(headerPanel);
+
+                        // 相对路径
+                        infoPanel.Children.Add(
+                            new TextBlock
+                            {
+                                Text = $"相对路径: {transfer.RelativePath}",
+                                Foreground = Brushes.Gray,
+                            }
+                        );
+
+                        // 完整路径
+                        infoPanel.Children.Add(
+                            new TextBlock
+                            {
+                                Text = $"保存位置: {transfer.FullPath}",
+                                Foreground = Brushes.Gray,
+                                TextWrapping = TextWrapping.Wrap,
+                            }
+                        );
+
+                        // 进度条
+                        var progressBar = new ProgressBar
+                        {
+                            Value = transfer.Progress.Value,
+                            Maximum = 100,
+                            Height = 4,
+                            Margin = new Thickness(0, 5, 0, 0),
+                        };
+                        infoPanel.Children.Add(progressBar);
+
+                        // 更新引用
+                        transfer.Progress = progressBar;
+
+                        ((DockPanel)container.Child).Children.Add(infoPanel);
+
+                        // 添加打开按钮（如果传输完成）
                         if (transfer.IsCompleted)
                         {
-                            fileButton.Click += (s, e) =>
+                            var openButton = new Button
                             {
+                                Content = "打开所在文件夹",
+                                HorizontalAlignment = HorizontalAlignment.Right,
+                                Margin = new Thickness(10, 5, 0, 0),
+                                [DockPanel.DockProperty] = Dock.Right,
+                            };
+
+                            openButton.Click += (s, e) =>
                                 Process.Start(
                                     new ProcessStartInfo
                                     {
@@ -276,13 +418,38 @@ namespace AvaSend.Models
                                         Arguments = $"/select,\"{transfer.FullPath}\"",
                                     }
                                 );
-                            };
+
+                            ((DockPanel)container.Child).Children.Add(openButton);
                         }
 
-                        _fileListPanel.Children.Add(fileButton);
+                        _fileListPanel.Children.Add(container);
                     }
                 }
             });
+        }
+
+        private void UpdateProgress(string filePath, int bytesReceived)
+        {
+            try
+            {
+                _fileProgress[filePath] = _fileProgress[filePath] + bytesReceived;
+                var fileInfo = new FileInfo(filePath);
+                double progress = (_fileProgress[filePath] * 100.0) / fileInfo.Length;
+
+                Dispatcher.UIThread.InvokeAsync(async () =>
+                {
+                    var transfer = _transfers.FirstOrDefault(x => x.FullPath == filePath);
+                    if (transfer?.Progress != null)
+                    {
+                        transfer.Progress.Value = Math.Min(progress, 100);
+                        await UpdateFileListAsync();
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"更新进度失败: {ex.Message}");
+            }
         }
 
         private string GetUniquePath(string path)
